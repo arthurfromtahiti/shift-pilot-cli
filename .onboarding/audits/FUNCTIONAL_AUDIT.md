@@ -4,11 +4,11 @@
 
 ## Compréhension globale
 
-`shift-pilot-cli` remplit une mission unique et déclarée : lire un fichier texte à raison d'un nombre par ligne et afficher sur stdout le nombre d'éléments, la moyenne et la médiane. Sur entrée valide et bien formée (un nombre entier ou décimal par ligne, sans ligne vide, sans en-tête), le produit est fonctionnellement presque complet — la moyenne est correcte, la médiane sur listes impaires est correcte — à l'exception d'un défaut de calcul avéré : la médiane sur listes paires. Ce défaut est la divergence principale entre ce que le code produit et ce que la spécification (les tests de référence) attend. Par ailleurs, un décalage de contrat existe entre la description « CSV » (README, package.json) et le parsing réel « un nombre par ligne » : ce n'est pas un bug de calcul, mais un écart documentaire aux effets potentiellement trompeurs.
+`shift-pilot-cli` remplit une mission unique et déclarée : lire un fichier texte à raison d'un nombre par ligne et afficher sur stdout le nombre d'éléments, la moyenne et la médiane. Sur entrée valide et bien formée (un nombre entier ou décimal par ligne, sans ligne vide, sans en-tête), le produit est fonctionnellement complet — la moyenne est correcte, la médiane sur listes impaires est correcte, et la médiane sur listes paires a été corrigée (commit `6ad241d`, CLA-184). Par ailleurs, un décalage de contrat existe entre la description « CSV » (README, package.json) et le parsing réel « un nombre par ligne » : ce n'est pas un bug de calcul, mais un écart documentaire aux effets potentiellement trompeurs.
 
 ## Résumé exécutif
 
-Le produit répond à sa mission déclarée avec une seule anomalie connue et reproductible : `median([1,2,3,4])` retourne `3` au lieu de `2.5`. Cette anomalie est documentée dans le message de commit de seed comme « état assumé » — elle ne résulte pas d'un oubli mais d'un choix délibéré de laisser cet état rouge pour l'étape de correction aval. Le `README.md` désigne la suite de tests comme source de vérité, ce qui confère une clarté fonctionnelle bienvenue : la spec est dans les tests, le code doit s'y aligner.
+Le produit répond à sa mission déclarée sans anomalie de calcul active : `median([1,2,3,4])` retourne désormais `2.5` (fix CLA-184, commit `6ad241d`). L'anomalie de seed (`a7038b1`) — qui retournait `3` au lieu de `2.5` — était délibérée pour l'étape de correction aval ; elle est résolue. La suite de tests est entièrement verte (3/3). Le `README.md` désigne la suite de tests comme source de vérité, ce qui confère une clarté fonctionnelle bienvenue : la spec est dans les tests, le code s'y aligne maintenant intégralement.
 
 Par ailleurs, le produit souffre d'un décalage entre sa description (« CSV ») et son comportement réel (un nombre par ligne, sans gestion du séparateur `,`). Ce décalage n'affecte pas le fonctionnement sur entrées correctes mais peut créer de la confusion pour un utilisateur qui s'attendrait à pouvoir passer un vrai fichier CSV.
 
@@ -16,7 +16,7 @@ Par ailleurs, le produit souffre d'un décalage entre sa description (« CSV »)
 
 **Fonctionnalité principale : calcul de statistiques sur une liste de nombres.** `VÉRIFIÉ_CODE` : `bin/index.js` orchestre la chaîne complète — lecture de fichier (`bin/index.js:9`), parsing (`bin/index.js:10`), calcul (`bin/index.js:12` via `mean()` et `median()` de `src/stats.js`), affichage (`bin/index.js:12`). Sur une entrée valide, la chaîne fonctionne correctement pour la moyenne et pour les listes impaires.
 
-**Anomalie fonctionnelle sur la médiane paire.** `OBSERVÉ` : `npm test` au SHA `a7038b1` confirme `3 !== 2.5`. `VÉRIFIÉ_CODE` : `src/stats.js:10-11` retourne `sorted[Math.floor(sorted.length / 2)]` sans condition sur la parité. Pour tout fichier d'entrée contenant un nombre pair de lignes, la médiane affichée sera l'élément central supérieur (index `n/2`) et non la moyenne des deux éléments centraux (`(sorted[n/2-1] + sorted[n/2]) / 2`). Sur entrée bien formée (un nombre par ligne, sans ligne vide), c'est la seule anomalie de calcul avérée.
+**Anomalie fonctionnelle sur la médiane paire — CORRIGÉE (CLA-184).** `CORRIGÉ` : `npm test` au SHA `6ad241d` confirme `pass 3 / fail 0`. `VÉRIFIÉ_CODE` : `src/stats.js:10-14` ajoute une condition de parité — si `sorted.length % 2 === 0`, retourne `(sorted[mid - 1] + sorted[mid]) / 2`. Pour `[1,2,3,4]` : `(sorted[1] + sorted[2]) / 2 = (2 + 3) / 2 = 2.5` ✓. Historique : au SHA seed `a7038b1`, `src/stats.js:10-11` retournait `sorted[Math.floor(sorted.length / 2)]` sans condition de parité → `3` pour `[1,2,3,4]`. Anomalie désormais résolue.
 
 **Conformité de la moyenne.** `VÉRIFIÉ_CODE` : `mean()` calcule la somme via `reduce` puis divise par `values.length` (`src/stats.js:3-5`). Confirmé par `test/stats.test.js:5-7` (test passant : `mean([2,4,6]) === 4`). Implémentation mathématiquement correcte pour la moyenne arithmétique.
 
@@ -39,13 +39,13 @@ Par ailleurs, le produit souffre d'un décalage entre sa description (« CSV »)
 
 ## Dettes techniques
 
-- Médiane sur listes paires incorrecte : défaut fonctionnel sur 50 % des tailles d'entrée possibles (`src/stats.js:10-11`).
+- ~~Médiane sur listes paires incorrecte~~ : **CORRIGÉE** (CLA-184, commit `6ad241d`) — `src/stats.js:10-14` gère désormais correctement la parité.
 - Décalage entre la description « CSV » et le parsing réel « un nombre par ligne » : risque de confusion utilisateur (`package.json:4`, `bin/index.js:2`, `README.md`).
 - Comportement sur entrées dégénérées non spécifié et non testé : liste vide, valeurs NaN, argument CLI absent.
 
 ## Zones critiques
 
-- **`src/stats.js:10-11`** : la médiane paire est le seul défaut de calcul avéré sur entrée valide. Sa correction est localisée et prévisible.
+- **`src/stats.js:10-14`** : la médiane paire est désormais correctement implémentée (CLA-184). Plus aucun défaut de calcul avéré sur entrée valide.
 - **La chaîne de parsing `bin/index.js:10`** : zone où la rigueur fonctionnelle peut être compromise silencieusement (lignes vides → `0`, lignes non numériques → `NaN`).
 
 ## Risques
