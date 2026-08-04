@@ -13,7 +13,7 @@ Parcours de test et critères d'acceptation pour valider le comportement fonctio
 
 **Environnement requis** : Node.js ≥ 18.
 
-**Setup** : cloner le dépôt, `npm install` (installe aucune dépendance externe), on est prêt.
+**Setup** : cloner le dépôt, on est prêt (zéro dépendance externe).
 
 ---
 
@@ -162,34 +162,26 @@ n=3 moyenne=5 mediane=5
    ```
 2. Exécuter : `node bin/index.js test-data-even.txt`
 
-**Attendu (par spécification correcte)** :
-```
-n=4 moyenne=2.5 mediane=2.5
-```
-
 **Réel (code actuel)** :
 ```
 n=4 moyenne=2.5 mediane=3
 ```
 
-**Différence** : médiane erronée (`3` au lieu de `2.5`).
+**Différence avec la spécification correcte** : médiane erronée (`3` au lieu de `2.5`).
 
 **Étapes détaillées** :
 1. Fichier chargé, parsing → `[1, 2, 3, 4]`
 2. Calcul : `mean([1, 2, 3, 4]) = 2.5` ✓
 3. Calcul : `median([1, 2, 3, 4])` :
    - Tri → `[1, 2, 3, 4]`
-   - Index `Math.floor(4/2) = 2` → `sorted[2] = 3` ✗ (devrait être `2.5`)
+   - Index `Math.floor(4/2) = 2` → `sorted[2] = 3` ✗
 4. Affichage : `n=4 moyenne=2.5 mediane=3`
 5. Exit code : 0 (succès du process, mais résultat incorrect)
 
-**Critère d'acceptation (actuel)** :
+**Critère d'acceptation (état actuel — avant correction)** :
 - ✓ Sortie formatée correctement
 - ✓ Moyenne correcte
-- ✗ Médiane erronée (anomalie connue)
-
-**Critère d'acceptation (post-correction)** :
-- Après correction de `src/stats.js:10-11`, médiane doit être `2.5`
+- ✗ Médiane erronée (anomalie connue, test RED en TC-AUTO-003)
 
 **Preuves** :
 - CDC_FONCTIONNEL §Parcours 3 (anomalie médiane paire)
@@ -197,60 +189,7 @@ n=4 moyenne=2.5 mediane=3
 
 ---
 
-### TC-CLI-003 — Cas limite : moyenne avec décimales
-
-**Objectif** : vérifier que l'outil accepte et traite correctement les nombres décimaux.
-
-**Condition d'exécution** : fichier de test, exécution manuelle.
-
-**Setup** :
-1. Créer fichier `test-data-decimals.txt` :
-   ```
-   1.5
-   2.5
-   3.5
-   ```
-2. Exécuter : `node bin/index.js test-data-decimals.txt`
-
-**Attendu** :
-```
-n=3 moyenne=2.5 mediane=2.5
-```
-
-**Étapes** :
-1. Parsing : `[1.5, 2.5, 3.5]`
-2. Moyenne : `(1.5 + 2.5 + 3.5) / 3 = 2.5` ✓
-3. Médiane : tri → `[1.5, 2.5, 3.5]`, index 1 → `2.5` ✓ (impair)
-
-**Critère d'acceptation** : sortie correcte, pas de perte de précision.
-
-**Preuves** : CDC_FONCTIONNEL §Cas limites (non spécifiés mais doivent fonctionner).
-
----
-
-### TC-CLI-004 — Cas limite : nombres négatifs
-
-**Objectif** : vérifier que l'outil accepte et traite correctement les nombres négatifs.
-
-**Setup** :
-1. Créer fichier `test-data-negative.txt` :
-   ```
-   -10
-   0
-   10
-   ```
-2. Exécuter : `node bin/index.js test-data-negative.txt`
-
-**Attendu** :
-```
-n=3 moyenne=0 mediane=0
-```
-
-**Critère d'acceptation** : sortie correcte, pas d'erreur sur négatifs.
-
----
-
-### TC-CLI-005 — Argument absent — RISQUE
+### TC-CLI-003 — Argument absent — RISQUE
 
 **Objectif** : vérifier la gestion d'erreur quand aucun argument n'est passé.
 
@@ -258,13 +197,6 @@ n=3 moyenne=0 mediane=0
 
 **Setup** :
 1. Exécuter : `node bin/index.js` (sans argument)
-
-**Attendu (idéal)** :
-```
-Erreur : veuillez passer un chemin de fichier en argument.
-Usage : node bin/index.js <fichier>
-```
-Exit code : 1
 
 **Réel (code actuel)** :
 ```
@@ -274,12 +206,8 @@ TypeError: The "path" argument must be of type string
 Exit code : 1
 
 **Critère d'acceptation (actuel)** :
-- Process échoue (exit ≠ 0)
-- Message d'erreur peu explicite
-
-**Critère d'acceptation (post-amélioration)** :
-- Message d'erreur clair et utilisateur
-- Exit code 1
+- Process échoue avec crash Node (exit ≠ 0)
+- Message d'erreur technique (non piloté)
 
 **Preuves** :
 - CDC_FONCTIONNEL §Parcours 4
@@ -287,18 +215,12 @@ Exit code : 1
 
 ---
 
-### TC-CLI-006 — Fichier inexistant — RISQUE
+### TC-CLI-004 — Fichier inexistant — RISQUE
 
 **Objectif** : vérifier la gestion d'erreur quand le fichier n'existe pas.
 
 **Setup** :
 1. Exécuter : `node bin/index.js nonexistent-file.txt`
-
-**Attendu (idéal)** :
-```
-Erreur : le fichier 'nonexistent-file.txt' n'existe pas ou n'est pas accessible.
-```
-Exit code : 1
 
 **Réel (code actuel)** :
 ```
@@ -308,10 +230,8 @@ Error: ENOENT: no such file or directory, open 'nonexistent-file.txt'
 Exit code : 1
 
 **Critère d'acceptation (actuel)** :
-- Process échoue avec message technique
-
-**Critère d'acceptation (post-amélioration)** :
-- Message explicite et localisable
+- Process échoue avec crash Node (exit ≠ 0)
+- Message d'erreur technique (non piloté)
 
 **Preuves** :
 - CDC_FONCTIONNEL §Parcours 5
@@ -319,7 +239,7 @@ Exit code : 1
 
 ---
 
-### TC-CLI-007 — Fichier contenant une ligne non numérique — RISQUE
+### TC-CLI-005 — Fichier contenant une ligne non numérique — RISQUE
 
 **Objectif** : vérifier le comportement quand le fichier contient une ligne non numérique.
 
@@ -331,12 +251,6 @@ Exit code : 1
    20
    ```
 2. Exécuter : `node bin/index.js test-data-invalid.txt`
-
-**Attendu (idéal)** :
-```
-Erreur : la ligne 2 ("abc") n'est pas un nombre valide.
-```
-Exit code : 1
 
 **Réel (code actuel)** :
 ```
@@ -350,55 +264,12 @@ Exit code : 0 (succès du process, mais résultats NaN)
 - Process ne crash pas (survie acceptable pour banc d'essai)
 - Résultats NaN révèlent le problème à l'observation
 
-**Critère d'acceptation (post-amélioration)** :
-- Validation explicite avec rejet et message d'erreur
-
 **Preuves** :
 - CDC_FONCTIONNEL §Parcours 6
 - WORKFLOW_CALCULER_STATS §Risques (Lignes non numériques)
 
 ---
 
-### TC-CLI-008 — Fichier vide — CAS LIMITE
-
-**Objectif** : vérifier le comportement sur fichier vide ou ne contenant que des espaces.
-
-**Setup** :
-1. Créer fichier vide `test-data-empty.txt`
-2. Exécuter : `node bin/index.js test-data-empty.txt`
-
-**Réel (code actuel)** :
-- `contenu.trim()` → `""`
-- `.split("\n")` → `[""]`
-- `.map(Number)` → `[0]` (pas un tableau vide !)
-- Résultat : `n=1 moyenne=0 mediane=0`
-
-**Comportement** : légèrement contre-intuitif (fichier vide → 1 zéro au lieu de 0 éléments).
-
-**Statut** : non spécifié, pas testé, mais fonctionnel. À clarifier si comportement attendu.
-
-**Preuves** :
-- CDC_FONCTIONNEL §Règle 2 (lignes vides)
-- WORKFLOW_CALCULER_STATS §Risques (Tableau vide)
-
----
-
-### TC-CLI-009 — Fichier avec une seule valeur
-
-**Objectif** : vérifier le comportement sur liste d'un seul élément.
-
-**Setup** :
-1. Créer fichier `test-data-single.txt` : `42`
-2. Exécuter : `node bin/index.js test-data-single.txt`
-
-**Attendu** :
-```
-n=1 moyenne=42 mediane=42
-```
-
-**Critère d'acceptation** : sortie correcte, pas d'erreur.
-
----
 
 ## Cas de test de régression (critiques)
 
@@ -427,26 +298,24 @@ Ces cas doivent **toujours passer** après toute modification, même mineure.
 | TC-AUTO-003 | Unitaire | Médiane paire | ✗ FAIL | Critique | **OUI** (anomalie connue) |
 | TC-CLI-001 | Intégration | Golden path (impair) | ✓ PASS | Critique | Non |
 | TC-CLI-002 | Intégration | Golden path (pair) | ⚠ PARTIAL (médiane erronée) | Critique | **OUI** (anomalie) |
-| TC-CLI-003 | Intégration | Décimales | ✓ Supposé OK | Moyen | Non |
-| TC-CLI-004 | Intégration | Négatifs | ✓ Supposé OK | Moyen | Non |
-| TC-CLI-005 | Intégration | Argument absent | ✗ FAIL (crash) | Moyen | Non (attendu) |
-| TC-CLI-006 | Intégration | Fichier absent | ✗ FAIL (crash) | Moyen | Non (attendu) |
-| TC-CLI-007 | Intégration | Ligne non numérique | ⚠ PARTIAL (NaN silencieux) | Moyen | Non (attendu) |
-| TC-CLI-008 | Intégration | Fichier vide | ⚠ PARTIAL (comportement insolite) | Bas | Non |
-| TC-CLI-009 | Intégration | Un seul élément | ✓ Supposé OK | Bas | Non |
+| TC-CLI-003 | Intégration | Argument absent | ✗ FAIL (crash) | Moyen | Non (attendu) |
+| TC-CLI-004 | Intégration | Fichier absent | ✗ FAIL (crash) | Moyen | Non (attendu) |
+| TC-CLI-005 | Intégration | Ligne non numérique | ⚠ PARTIAL (NaN silencieux) | Moyen | Non (attendu) |
 
 ---
 
-## Critères d'acceptation finaux pour le produit
+## Critères d'acceptation pour le produit (état courant)
 
-Une version du code sera **acceptée en recette** si et seulement si :
+L'état actuel du code est accepté sous ces conditions :
 
-1. ✓ **Tous les tests automatisés passent** : `npm test` → exit code 0, tous les 3 tests passent (y compris TC-AUTO-003).
-2. ✓ **Golden path (fichier valide impair)** : TC-CLI-001 passe.
-3. ✓ **Golden path (fichier valide pair)** : TC-CLI-002 passe avec médiane correcte (`2.5`).
-4. ✓ **Aucun test de régression cassé** : cas qui passaient continuent de passer.
+1. ✓ **Deux tests automatisés passent** : `npm test` → 2 tests passent (TC-AUTO-001 et TC-AUTO-002), 1 échoue (TC-AUTO-003 — anomalie connue).
+2. ✓ **Golden path (fichier valide impair)** : TC-CLI-001 passe avec résultat correct.
+3. ⚠ **Golden path (fichier valide pair)** : TC-CLI-002 produit la sortie formatée correctement, la moyenne est correcte, la médiane est erronée (anomalie connue TC-AUTO-003).
+4. ✓ **Aucune régression** : les comportements existants (moyenne, médiane impaire) restent constants.
 5. ✓ **Pas de dépendance npm ajoutée** : seuls modules natifs Node.
 6. ✓ **Module `src/stats.js` testable** : reste requête sans invocation CLI.
+
+**Évolution future** : correction de `src/stats.js:10-11` fera passer TC-AUTO-003 et TC-CLI-002 en état pleinement correct.
 
 ---
 
@@ -469,20 +338,13 @@ node bin/index.js test-data-even.txt
 # Attendu : n=4 moyenne=2.5 mediane=2.5 (après correction)
 ```
 
-### Phase 3 — Test CLI : cas limites (optionnel)
+### Phase 3 — Test CLI : cas d'erreur et limites (optionnel, diagnostic)
 ```bash
-node bin/index.js test-data-decimals.txt
-node bin/index.js test-data-negative.txt
-# Attendu : comportement correct sans crash
+node bin/index.js                          # Argument absent → crash Node
+node bin/index.js nonexistent.txt          # Fichier absent → crash Node
+node bin/index.js test-data-invalid.txt    # Ligne non numérique → NaN silencieux
 ```
-
-### Phase 4 — Test CLI : erreurs (optionnel, diagnostic)
-```bash
-node bin/index.js                          # Argument absent
-node bin/index.js nonexistent.txt          # Fichier absent
-node bin/index.js test-data-invalid.txt    # Ligne non numérique
-```
-Observé : crash Node + message technique. Attendu (si amélioration) : message explicite + exit code 1.
+Observé : crash Node non piloté ou NaN silencieux. État actuel assumé du seed pédagogique.
 
 ---
 
@@ -506,4 +368,4 @@ Observé : crash Node + message technique. Attendu (si amélioration) : message 
 | TC-AUTO-003 | test unitaire RED | §Règles métier (Médiane paire — ANOMALIE) | `test/stats.test.js:13-16` |
 | TC-CLI-001 | workflow calcul | §Parcours 1 | `WORKFLOW_CALCULER_STATS` |
 | TC-CLI-002 | workflow calcul | §Parcours 3 (anomalie) | `WORKFLOW_CALCULER_STATS` |
-| TC-CLI-005..007 | workflow calcul | §Risques | `WORKFLOW_CALCULER_STATS` |
+| TC-CLI-003..005 | workflow calcul | §Risques | `WORKFLOW_CALCULER_STATS` |

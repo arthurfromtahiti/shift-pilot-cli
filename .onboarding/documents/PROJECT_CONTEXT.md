@@ -52,7 +52,7 @@ Trois tests unitaires en `node:test` + `node:assert/strict` (zéro dépendances 
 ### Anomalie de calcul connue et assumée
 La médiane d'une liste de taille paire renvoie l'index `Math.floor(n/2)` au lieu de la moyenne des deux centraux. Le commit de seed note explicitement : *« la médiane paire est en échec — état assumé du seed »*. C'est une **anomalie par conception**, pas un oubli. Elle qualifie d'anomalie tout résultat de médiane sur entrée paire.
 
-**Impact** : 50 % des tailles d'entrée produisent une médiane erronée sans avertissement.
+**Impact** : entrées de taille **paire** produisent une médiane erronée sans avertissement (inférence dérivée de l'implémentation `src/stats.js:10-11` et du test RED `test/stats.test.js:13-16`).
 
 **Preuve** : `src/stats.js:10-11` ; `test/stats.test.js:13-16` (test RED) ; observation directe `npm test` (fail 1).
 

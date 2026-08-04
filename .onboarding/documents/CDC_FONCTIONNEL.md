@@ -129,10 +129,11 @@ Aucun — le projet n'est pas adossé à une organisation décisionnelle. L'éta
 1. `process.argv[2]` vaut `undefined`
 2. `fs.readFileSync(undefined, "utf8")` → TypeError non capturé
 3. Processus crash, exit code ≠ 0
+4. Affichage utilisateur : `TypeError: The "path" argument must be of type string` (message technique Node.js, cryptique)
 
-**Affichage utilisateur** : `TypeError: The "path" argument must be of type string` (cryptique).
+**Comportement actuel** : crash Node non piloté, pas de garde en `bin/index.js:8-9`.
 
-**Attendu** : message explicite « Erreur : veuillez passer un chemin de fichier en argument. Usage : node bin/index.js <fichier> ».
+**État** : ⚠ risque documenté, anomalie assumée (zone critique, pas d'error handling).
 
 **Preuves** : `WORKFLOW_CALCULER_STATS` §Risques ; `bin/index.js:8-9`, pas de garde.
 
@@ -145,10 +146,11 @@ Aucun — le projet n'est pas adossé à une organisation décisionnelle. L'éta
 **Déroulement réel** :
 1. `fs.readFileSync("nonexistent.txt", "utf8")` → ENOENT non capturé
 2. Processus crash, exit code ≠ 0
+3. Affichage utilisateur : `Error: ENOENT: no such file or directory, open 'nonexistent.txt'` (message système, non piloté)
 
-**Affichage utilisateur** : `Error: ENOENT: no such file or directory, open 'nonexistent.txt'`.
+**Comportement actuel** : crash Node non piloté, pas de `try/catch` en `bin/index.js:9`.
 
-**Attendu** : message explicite « Erreur : le fichier 'nonexistent.txt' n'existe pas ou n'est pas accessible. »
+**État** : ⚠ risque documenté, anomalie assumée (zone critique, pas de gestion d'erreur I/O).
 
 **Preuves** : `bin/index.js:9`, pas de `try/catch`.
 
@@ -167,10 +169,11 @@ abc
 1. Parsing → `[10, NaN, 20]`
 2. `mean([10, NaN, 20])` → `reduce(...) → 10 + NaN + 20 = NaN ; NaN / 3 = NaN`
 3. `median([10, NaN, 20])` → tri → `[NaN, 10, 20]` (NaN sort first en JS), médiane calculée sur valeur NaN ou à côté de NaN
+4. Affichage : `n=3 moyenne=NaN mediane=<NaN ou value incohérente>`
 
-**Affichage** : `n=3 moyenne=NaN mediane=<NaN ou value incohérente>`
+**Comportement actuel** : pas d'erreur levée, NaN silencieusement injecté dans les calculs ; process exit 0 malgré résultats invalides.
 
-**Attendu** : rejet explicite avec message « Erreur : la ligne 2 ("abc") n'est pas un nombre valide. »
+**État** : ⚠ risque documenté, anomalie assumée (pas de validation d'entrée en `bin/index.js:10` — `.map(Number)` convertit tout, y compris non-nombres).
 
 **Preuves** : `WORKFLOW_CALCULER_STATS` §Risques ; `bin/index.js:10`, pas de filtre.
 
@@ -251,14 +254,7 @@ abc
 
 **État** : ✗ erronée, test RED, anomalie connue assumée au seed.
 
-**Recommandation** : corriger `src/stats.js:10-11` pour ajouter condition :
-```javascript
-if (sorted.length % 2 === 0) {
-  const mid = sorted.length / 2;
-  return (sorted[mid - 1] + sorted[mid]) / 2;
-}
-return sorted[Math.floor(sorted.length / 2)];
-```
+**Recommandation** : corriger la logique de `src/stats.js:10-11` pour calculer la moyenne des deux valeurs centrales en cas de taille paire, au lieu de retourner l'élément à l'index supérieur.
 
 ---
 

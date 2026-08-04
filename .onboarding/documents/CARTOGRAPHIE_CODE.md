@@ -241,18 +241,7 @@ const { mean, median } = require("../src/stats");
 ### Chemin 1 — Corriger la médiane paire
 **Zone d'impact** : `src/stats.js:10-11`
 
-**Changement attendu** :
-```javascript
-// Avant (erroné)
-return sorted[Math.floor(sorted.length / 2)];
-
-// Après (correct)
-if (sorted.length % 2 === 0) {
-  const mid = sorted.length / 2;
-  return (sorted[mid - 1] + sorted[mid]) / 2;
-}
-return sorted[Math.floor(sorted.length / 2)];
-```
+**Changement** : ajouter logique de parité pour retourner la moyenne des deux valeurs centrales en cas de taille paire, au lieu de retourner l'élément à l'index supérieur.
 
 **Vérification** : test `test/stats.test.js:13-16` doit passer.
 
