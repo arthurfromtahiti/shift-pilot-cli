@@ -1,21 +1,20 @@
 # Relecture — SECURITY_ROBUSTNESS_AUDIT.md
 
 ## Verdict global
-À corriger — le fond de l'audit est globalement juste, mais la discipline de preuve n'est pas tenue sur un point central. Des comportements runtime précis sont présentés en `VÉRIFIÉ_CODE` alors qu'ils exigent une observation d'exécution, et un autre comportement démontrable reste relégué en `HYPOTHÈSE`.
+Bon — l'audit est maintenant correctement qualifié et suffisamment sourcé. Le point bloquant précédent sur la recommandation 3 a été levé : le traitement des lignes vides est explicitement séparé du filtrage des `NaN`, avec l'ordre des opérations formulé sans ambiguïté.
 
 ## Problèmes bloquants
-- Le constat "Absence d'argument CLI" mélange lecture de code et symptôme runtime exact sous le statut `VÉRIFIÉ_CODE`. Ouvrir [bin/index.js](/paperclip/instances/default/projects/be2f6065-a710-4a1d-8bb7-531efdbc6f23/98b69238-8403-474b-b5ae-b7d85608bd00/shift-pilot-cli/bin/index.js:8) permet de prouver que `process.argv[2]` est utilisé sans garde et que `fs.readFileSync` recevra `undefined`; en revanche, le type d'exception exact, son message complet et l'affichage d'une stack trace relèvent de l'exécution. J'ai observé `node bin/index.js` le 2026-08-04: `TypeError [ERR_INVALID_ARG_TYPE]` à [bin/index.js](/paperclip/instances/default/projects/be2f6065-a710-4a1d-8bb7-531efdbc6f23/98b69238-8403-474b-b5ae-b7d85608bd00/shift-pilot-cli/bin/index.js:9). L'audit doit donc soit scinder `VÉRIFIÉ_CODE` / `OBSERVÉ`, soit retirer les détails runtime non observés.
+Aucun dans cette version.
 
 ## Problèmes mineurs
-- Le constat "Ligne vide → `0` silencieux" est sous-qualifié en `HYPOTHÈSE` alors qu'il est vérifiable. Lecture de [bin/index.js](/paperclip/instances/default/projects/be2f6065-a710-4a1d-8bb7-531efdbc6f23/98b69238-8403-474b-b5ae-b7d85608bd00/shift-pilot-cli/bin/index.js:10): `split(\"\\n\").map(Number)` suffit déjà à le démontrer. Reproduction observée le 2026-08-04 avec un fichier `1`, ligne vide, `3`: sortie `n=3 moyenne=1.3333333333333333 mediane=1`.
-- Le constat "fichier vide interprété comme `[0]`" est correctement fondé, et il gagnerait à être élevé au statut `OBSERVÉ` puisque `node bin/index.js <fichier vide>` a produit `n=1 moyenne=0 mediane=0` le 2026-08-04.
+Aucun relevé dans ce run.
 
 ## Points vérifiés et corrects
-- L'absence de dépendances externes est exacte à la lecture de [package.json](/paperclip/instances/default/projects/be2f6065-a710-4a1d-8bb7-531efdbc6f23/98b69238-8403-474b-b5ae-b7d85608bd00/shift-pilot-cli/package.json:1).
-- L'absence d'exposition réseau et de secrets recopiés est cohérente avec l'ouverture de [bin/index.js](/paperclip/instances/default/projects/be2f6065-a710-4a1d-8bb7-531efdbc6f23/98b69238-8403-474b-b5ae-b7d85608bd00/shift-pilot-cli/bin/index.js:1), [src/stats.js](/paperclip/instances/default/projects/be2f6065-a710-4a1d-8bb7-531efdbc6f23/98b69238-8403-474b-b5ae-b7d85608bd00/shift-pilot-cli/src/stats.js:1) et [package.json](/paperclip/instances/default/projects/be2f6065-a710-4a1d-8bb7-531efdbc6f23/98b69238-8403-474b-b5ae-b7d85608bd00/shift-pilot-cli/package.json:1).
-- Le risque `NaN` silencieux est concret et correctement rattaché à [bin/index.js](/paperclip/instances/default/projects/be2f6065-a710-4a1d-8bb7-531efdbc6f23/98b69238-8403-474b-b5ae-b7d85608bd00/shift-pilot-cli/bin/index.js:10) et [src/stats.js](/paperclip/instances/default/projects/be2f6065-a710-4a1d-8bb7-531efdbc6f23/98b69238-8403-474b-b5ae-b7d85608bd00/shift-pilot-cli/src/stats.js:3).
+- `.onboarding/audits/SECURITY_ROBUSTNESS_AUDIT.md:16-17` sépare correctement `VÉRIFIÉ_CODE` et `OBSERVÉ (2026-08-04)` pour le cas `node bin/index.js` sans argument. La lecture de [bin/index.js](/paperclip/instances/default/projects/be2f6065-a710-4a1d-8bb7-531efdbc6f23/98b69238-8403-474b-b5ae-b7d85608bd00/shift-pilot-cli/bin/index.js:8) prouve l'absence de garde ; le symptôme runtime exact reste bien cantonné au statut observé.
+- `.onboarding/audits/SECURITY_ROBUSTNESS_AUDIT.md:23` qualifie justement `Ligne vide -> 0 silencieux` en `VÉRIFIÉ_CODE`, ce que confirme la lecture de [bin/index.js](/paperclip/instances/default/projects/be2f6065-a710-4a1d-8bb7-531efdbc6f23/98b69238-8403-474b-b5ae-b7d85608bd00/shift-pilot-cli/bin/index.js:10) avec `split("\n").map(Number)`.
+- `.onboarding/audits/SECURITY_ROBUSTNESS_AUDIT.md:26-27` ajoute bien l'observation d'exécution pour le fichier vide, cohérente avec le chemin de code lu dans [bin/index.js](/paperclip/instances/default/projects/be2f6065-a710-4a1d-8bb7-531efdbc6f23/98b69238-8403-474b-b5ae-b7d85608bd00/shift-pilot-cli/bin/index.js:9).
+- `.onboarding/audits/SECURITY_ROBUSTNESS_AUDIT.md:49-52` rend le risque `NaN` et le risque `ligne vide -> 0` concrets, rattachés à un scénario d'entrée et à un impact utilisateur explicite, sans surjouer la gravité.
+- `.onboarding/audits/SECURITY_ROBUSTNESS_AUDIT.md:55-61` formule désormais une remédiation implémentable sans ambiguïté : filtrage des lignes vides au niveau chaîne avant `.map(Number)`, puis filtrage des `NaN` après conversion. Cette formulation est cohérente avec [bin/index.js](/paperclip/instances/default/projects/be2f6065-a710-4a1d-8bb7-531efdbc6f23/98b69238-8403-474b-b5ae-b7d85608bd00/shift-pilot-cli/bin/index.js:10) et ne peut plus être lue comme si `filter(Number.isFinite)` suffisait à traiter les lignes vides.
 
 ## Recommandations de correction
-- Réécrire le constat sur l'argument manquant en séparant ce que la lecture du code prouve de ce que l'exécution a montré.
-- Requalifier "ligne vide → `0`" en `VÉRIFIÉ_CODE` ou `OBSERVÉ`.
-- Si tu gardes des détails d'erreur exacts (`ERR_INVALID_ARG_TYPE`, `ENOENT`, texte stderr), ajoute la commande observée et marque-les `OBSERVÉ`.
+- Aucune correction supplémentaire demandée sur cet artefact.
