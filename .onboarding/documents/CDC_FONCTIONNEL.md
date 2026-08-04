@@ -191,9 +191,7 @@ abc
 - Fichiers avec BOM (Byte Order Mark)
 - Encodages non-UTF-8
 
-**Incohérence documentaire** : `package.json:4` dit « statistiques sur fichiers CSV » ; `README.md` dit « `data.csv` ». La réalité est « un nombre par ligne ». `HYPOTHÈSE DE RÉCONCILIATION` : intention d'un pseudo-CSV monocolonne ; nomination maladroite.
-
-**Recommandation** : corriger la documentation vers « un nombre par ligne » pour éviter la confusion utilisateur.
+**Incohérence documentée** : `package.json:4` dit « statistiques sur fichiers CSV » ; `README.md` dit « `data.csv` ». L'implémentation parse « un nombre par ligne » seulement. Écart identifié entre déclaration (CSV) et implémentation réelle (newline-separated).
 
 ---
 
@@ -205,9 +203,7 @@ abc
 
 **Codification** : `bin/index.js:10` — `.map(Number)`, comportement natif JavaScript.
 
-**Cas problématique** : un utilisateur passant un fichier avec une ligne vide obtient un résultat faussé sans avertissement. Exemple : fichier `[10, "", 20]` → parsing `[10, 0, 20]` → moyenne `10` au lieu de `15`.
-
-**Recommandation** : ajouter validation explicite (rejet ou conversion en 0 avec warning).
+**Cas problématique observé** : un utilisateur passant un fichier avec une ligne vide obtient un résultat silencieusement faussé. Exemple : fichier `[10, "", 20]` → parsing `[10, 0, 20]` → moyenne `10` au lieu de `15`. Aucune validation, aucun avertissement.
 
 ---
 
@@ -246,15 +242,13 @@ abc
 
 **Exemple réel** : `median([1, 2, 3, 4])` → tri `[1, 2, 3, 4]`, index `Math.floor(4/2) = 2`, résultat `sorted[2] = 3` ✗.
 
-**Attendu (par test de référence)** : `2.5` (moyenne des deux centraux : `(2 + 3) / 2`).
+**Défini par le test de référence** : `2.5` (moyenne des deux centraux : `(2 + 3) / 2`).
 
-**Impact** : tout résultat de médiane sur fichier pair est statistiquement incorrect — l'utilisateur choisit toujours le quartile supérieur sans le savoir.
+**Impact** : tout résultat de médiane sur fichier pair diverge de la référence — la valeur retournée est toujours le quartile supérieur, pas la moyenne des deux centraux.
 
 **Preuves** : test RED `test/stats.test.js:13-16` ; audit `FUNCTIONAL_AUDIT` §Anomalie fonctionnelle.
 
 **État** : ✗ erronée, test RED, anomalie connue assumée au seed.
-
-**Recommandation** : corriger la logique de `src/stats.js:10-11` pour calculer la moyenne des deux valeurs centrales en cas de taille paire, au lieu de retourner l'élément à l'index supérieur.
 
 ---
 
@@ -280,10 +274,9 @@ abc
 
 **État actuel** : 3 tests · 2 passent · 1 échoue (médiane paire).
 
-**Implications** :
-- Le test échoué (`test/stats.test.js:13-16`) est une **preuve de l'anomalie**, pas un bug du test.
-- Toute modification du code qui ferait passer ce test est valide ; toute modification qui le ferait échouer est une régression.
-- Les 2 tests passants sont des critères d'acceptation incontournables pour la moyenne et la médiane impaire.
+**Interprétation** :
+- Le test échoué (`test/stats.test.js:13-16`) documente l'anomalie de médiane paire.
+- Les 2 tests passants (`test/stats.test.js:5-7`, `test/stats.test.js:9-11`) fixent le comportement correct pour moyenne et médiane impaire.
 
 **Preuves** : audit `FUNCTIONAL_AUDIT` §Résumé exécutif ; `WORKFLOW_EXECUTER_SUITE_TESTS`.
 
@@ -328,7 +321,7 @@ abc
 
 ## Périmètre et limitations
 
-### Hors périmètre — Non implémenté et non prévu d'implémenter
+### Hors périmètre — Non implémenté
 - Options CLI (`--decimal`, `--format json`, `--verbose`)
 - Multi-fichier en une invocation
 - Autres séparateurs d'entrée (`,`, `;`, whitespace)
@@ -338,9 +331,9 @@ abc
 - Authentification / contrôle d'accès (binaire sans état)
 
 ### Inachevé et indéterminable
-- **Cas limites non spécifiés** : comportement attendu sur fichier vide, liste à un seul élément, valeurs négatives, décimales, très grandes valeurs (overflow). Aucun test, aucune documentation.
-- **Interaction avec les locales** : le séparateur décimal est toujours `.` (JavaScript natif) ; pas de support de `,` pour les locales européennes, non documenté.
-- **Gestion d'erreur** : message d'erreur non piloté, crash natif Node.
+- **Cas limites non testés** : fichier vide, liste à un seul élément, valeurs négatives, décimales, très grandes valeurs (overflow). Aucun test, comportement non documenté.
+- **Interaction avec les locales** : le séparateur décimal observé est toujours `.` (JavaScript natif) ; pas de support pour `,` (locales européennes).
+- **Gestion d'erreur** : erreurs I/O et argument absent remontent comme crashes Node bruts, non capturées en `bin/index.js`.
 
 ### Scénarios documentés comme supposément OK mais non testés
 - Fichier vide
@@ -350,15 +343,15 @@ abc
 
 ---
 
-## Critères d'acceptation définitifs
+## État de référence — Comportement observé
 
-Une modification du code sera acceptée si et seulement si :
+L'état courant du dépôt peut être résumé par :
 
-1. ✓ Tous les 3 tests de `test/stats.test.js` passent (`npm test` → exit 0)
-2. ✓ La chaîne golden path (fichier valide, entrée bien formée) produit résultat correct affichage `n=<nombre> moyenne=<m> mediane=<d>`
-3. ✓ Aucune dépendance npm externe ajoutée
-4. ✓ Module `src/stats.js` reste testable en isolation (imports clairs, pas d'effet de bord)
-5. ✓ Pas de régression sur les comportements existants (moyenne impaire + médiane impaire resteront corrects)
+1. Tests actuels : `test/stats.test.js` contient 3 cas (moyenne, médiane impaire, médiane paire)
+2. Golden path : fichier valide bien formé → affichage `n=<nombre> moyenne=<m> mediane=<d>`
+3. Dépendances : zéro dépendance npm externe
+4. Testabilité : `src/stats.js` exporte fonctions pures (`mean`, `median`)
+5. Comportements observés : moyenne correcte, médiane impaire correcte, médiane paire erronée (test RED)
 
 ---
 
@@ -376,10 +369,10 @@ Une modification du code sera acceptée si et seulement si :
 
 ---
 
-## Questions ouvertes pour l'implémentation aval
+## Questions ouvertes persistantes
 
-1. **Médiane paire** : correction programmée dans le chantier aval ? Ou maintien volontaire de l'état RED pour la chaîne Paperclip ?
-2. **Gestion d'erreur** : ajouter des gardes (argument absent, fichier absent, ligne non numérique) et messages explicites ?
-3. **Documentation** : corriger « CSV » → « un nombre par ligne » ?
-4. **Cas limites** : spécifier et tester comportement sur fichier vide, liste d'un élément ?
-5. **Granularité des domaines** : suite-tests doit-elle s'étendre ou rester à 3 cas ?
+1. **Médiane paire** : le test RED est-il volontaire (seed pédagogique) ou non ?
+2. **Gestion d'erreur** : aucune garde actuellement (argument absent, fichier absent, ligne non numérique) → crash Node.
+3. **Incohérence documentaire** : « CSV » vs. « un nombre par ligne » reste divergente.
+4. **Cas limites** : comportement sur fichier vide, liste d'un seul élément, valeurs négatives non spécifiés ni testés.
+5. **Scopes testés** : suite actuellement à 3 cas (moyenne, médiane impaire, médiane paire).

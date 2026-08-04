@@ -97,8 +97,6 @@ Exécutés via `npm test` (`node --test test/*.test.js`).
 
 **Impact** : tout résultat de médiane sur fichier d'un nombre pair d'éléments est statistiquement incorrect.
 
-**Recommandation** : corriger `src/stats.js:10-11` pour ajouter condition de parité avant cette recette passe.
-
 **Preuves** :
 - Code : `src/stats.js:10-11` (implémentation erronée de `median` paire)
 - Test : `test/stats.test.js:13-16` (test RED)
@@ -136,9 +134,7 @@ n=3 moyenne=5 mediane=5
 5. Affichage : format invariant `n=3 moyenne=5 mediane=5`
 6. Exit code : 0 (succès)
 
-**Réel attendu** : identique.
-
-**Critère d'acceptation** : sortie exacte, exit code 0.
+**Réel observé** : identique (test passant `test/stats.test.js:9-11`).
 
 **Preuves** :
 - CDC_FONCTIONNEL §Parcours 1 (golden path impair)
@@ -178,10 +174,10 @@ n=4 moyenne=2.5 mediane=3
 4. Affichage : `n=4 moyenne=2.5 mediane=3`
 5. Exit code : 0 (succès du process, mais résultat incorrect)
 
-**Critère d'acceptation (état actuel — avant correction)** :
-- ✓ Sortie formatée correctement
-- ✓ Moyenne correcte
-- ✗ Médiane erronée (anomalie connue, test RED en TC-AUTO-003)
+**État observé (anomalie connue)** :
+- ✓ Sortie formatée correctement (`n=4 moyenne=2.5 mediane=3`)
+- ✓ Moyenne correcte (`2.5`)
+- ✗ Médiane erronée (`3` au lieu de `2.5`, test RED en TC-AUTO-003)
 
 **Preuves** :
 - CDC_FONCTIONNEL §Parcours 3 (anomalie médiane paire)
@@ -205,9 +201,9 @@ TypeError: The "path" argument must be of type string
 ```
 Exit code : 1
 
-**Critère d'acceptation (actuel)** :
+**État observé (actuel)** :
 - Process échoue avec crash Node (exit ≠ 0)
-- Message d'erreur technique (non piloté)
+- Message d'erreur technique non piloté (TypeError brut)
 
 **Preuves** :
 - CDC_FONCTIONNEL §Parcours 4
@@ -229,9 +225,9 @@ Error: ENOENT: no such file or directory, open 'nonexistent-file.txt'
 ```
 Exit code : 1
 
-**Critère d'acceptation (actuel)** :
+**État observé (actuel)** :
 - Process échoue avec crash Node (exit ≠ 0)
-- Message d'erreur technique (non piloté)
+- Message d'erreur technique non piloté (ENOENT brut)
 
 **Preuves** :
 - CDC_FONCTIONNEL §Parcours 5
@@ -258,11 +254,11 @@ n=3 moyenne=NaN mediane=NaN
 ```
 Exit code : 0 (succès du process, mais résultats NaN)
 
-**Problème** : pas d'erreur levée, NaN silencieusement injecté dans les calculs.
+**Observation** : pas d'erreur levée, NaN silencieusement injecté dans les calculs ; résultats invalides affichés.
 
-**Critère d'acceptation (actuel)** :
-- Process ne crash pas (survie acceptable pour banc d'essai)
-- Résultats NaN révèlent le problème à l'observation
+**État courant** :
+- Process exit 0 (pas de crash)
+- Résultats NaN révèlent le problème à l'observation (absence de validation silencieuse)
 
 **Preuves** :
 - CDC_FONCTIONNEL §Parcours 6
@@ -304,47 +300,45 @@ Ces cas doivent **toujours passer** après toute modification, même mineure.
 
 ---
 
-## Critères d'acceptation pour le produit (état courant)
+## État de référence observé (testé)
 
-L'état actuel du code est accepté sous ces conditions :
+L'état courant du code est défini par :
 
-1. ✓ **Deux tests automatisés passent** : `npm test` → 2 tests passent (TC-AUTO-001 et TC-AUTO-002), 1 échoue (TC-AUTO-003 — anomalie connue).
-2. ✓ **Golden path (fichier valide impair)** : TC-CLI-001 passe avec résultat correct.
-3. ⚠ **Golden path (fichier valide pair)** : TC-CLI-002 produit la sortie formatée correctement, la moyenne est correcte, la médiane est erronée (anomalie connue TC-AUTO-003).
-4. ✓ **Aucune régression** : les comportements existants (moyenne, médiane impaire) restent constants.
-5. ✓ **Pas de dépendance npm ajoutée** : seuls modules natifs Node.
-6. ✓ **Module `src/stats.js` testable** : reste requête sans invocation CLI.
-
-**Évolution future** : correction de `src/stats.js:10-11` fera passer TC-AUTO-003 et TC-CLI-002 en état pleinement correct.
+1. **Tests automatisés** : `npm test` → 2 tests passent (TC-AUTO-001 et TC-AUTO-002), 1 échoue (TC-AUTO-003 — anomalie connue).
+2. **Golden path (fichier valide impair)** : TC-CLI-001 produit résultat correct (`n=3 moyenne=5 mediane=5`).
+3. **Golden path (fichier valide pair)** : TC-CLI-002 produit sortie formatée (`n=4 moyenne=2.5 mediane=3`), moyenne correcte, médiane erronée (anomalie connue).
+4. **Comportements constants** : les tests passants (moyenne, médiane impaire) restent constants.
+5. **Dépendances** : zéro dépendance npm externe, seuls modules natifs Node.
+6. **Testabilité** : `src/stats.js` exporte fonctions pures (`mean`, `median`), testables en isolation.
 
 ---
 
-## Déroulement de recette recommandé
+## Parcours de vérification observable
 
-### Phase 1 — Vérification des tests unitaires
+### Phase 1 — Tests unitaires (automatisés)
 ```bash
 npm test
 ```
-Attendu : `tests 3 · pass 2 · fail 1` (avant correction médiane) → `tests 3 · pass 3 · fail 0` (après correction).
+Observé : `tests 3 · pass 2 · fail 1` (TC-AUTO-001 ✓, TC-AUTO-002 ✓, TC-AUTO-003 ✗ anomalie paire).
 
-### Phase 2 — Test CLI : golden paths
+### Phase 2 — Tests CLI : parcours golden paths (manuels ou scripted)
 ```bash
-# Impair
+# Impair (TC-CLI-001)
 node bin/index.js test-data-odd.txt
-# Attendu : n=3 moyenne=5 mediane=5
+# Observé : n=3 moyenne=5 mediane=5 ✓
 
-# Pair
+# Pair (TC-CLI-002)
 node bin/index.js test-data-even.txt
-# Attendu : n=4 moyenne=2.5 mediane=2.5 (après correction)
+# Observé : n=4 moyenne=2.5 mediane=3 ⚠ (anomalie paire)
 ```
 
-### Phase 3 — Test CLI : cas d'erreur et limites (optionnel, diagnostic)
+### Phase 3 — Cas d'erreur et limites (diagnostic)
 ```bash
-node bin/index.js                          # Argument absent → crash Node
-node bin/index.js nonexistent.txt          # Fichier absent → crash Node
+node bin/index.js                          # Argument absent → TypeError non capturé
+node bin/index.js nonexistent.txt          # Fichier absent → ENOENT non capturé
 node bin/index.js test-data-invalid.txt    # Ligne non numérique → NaN silencieux
 ```
-Observé : crash Node non piloté ou NaN silencieux. État actuel assumé du seed pédagogique.
+Observé : crash Node brut ou NaN silencieux dans les calculs. État actuel assumé (pas de garde d'erreur en `bin/index.js:8-10`).
 
 ---
 

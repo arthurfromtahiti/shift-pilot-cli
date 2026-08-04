@@ -47,9 +47,9 @@ module.exports = { mean, median }
 
 **Dépendances** : aucune.
 
-**Critère d'acceptation** : tous les tests `test/stats.test.js` passent.
+**État observable** : 2 tests passent (`mean`, `median` impair), 1 échoue (`median` pair, test RED `test/stats.test.js:13-16`).
 
-**Zone critique** : ligne 10-11 (implémentation de médiane paire).
+**Zone sensible** : ligne 10-11 (implémentation de médiane paire, source du test RED).
 
 ---
 
@@ -97,15 +97,15 @@ const { mean, median } = require("../src/stats");
 
 **Dépendances** : `src/stats.js` (logique métier) ; module natif `fs`.
 
-**Dettes technique observées** :
-- Absence de gestion d'erreur (crash natif sur argument absent ou fichier inexistant)
-- Absence de validation d'entrée (NaN injected silently)
-- Responsabilités mélangées (I/O, parsing, orchestration, affichage) — 12 lignes non décomposées
-- Pas de fonction nommée intermédiaire pour tester le parsing indépendamment de l'invocation CLI
+**Observé** :
+- Absence de gestion d'erreur : crash natif Node sur argument absent ou fichier inexistant
+- Absence de validation d'entrée : NaN silencieusement injecté via `map(Number)`
+- Responsabilités concentrées (I/O, parsing, orchestration, affichage) — 12 lignes non décomposées
+- Pas de extraction de fonction testable pour parsing indépendant de CLI
 
-**Critère d'acceptation** : parcours golden path (fichier valide bien formé) affiche résultat correct.
+**État du golden path** : fichier valide bien formé → résultat correct sur stdout (observable `npm test`, tests TC-CLI-001 et TC-CLI-002 en CAHIER_RECETTE).
 
-**Zone critique** : ligne 8-10 (tout ce qui peut échouer silencieusement ou avec crash natif).
+**Zone sensible** : ligne 8-10 (argument absent, I/O, parsing — aucune garde).
 
 ---
 
@@ -236,42 +236,39 @@ const { mean, median } = require("../src/stats");
 
 ---
 
-## Chemins critiques pour modifications
+## Zones de concentration — éléments sensibles
 
-### Chemin 1 — Corriger la médiane paire
-**Zone d'impact** : `src/stats.js:10-11`
+### Zone A — Médiane paire (`src/stats.js:10-11`)
+**Observation** : implémentation retourne l'élément à l'index `Math.floor(length/2)` au lieu de moyenner les deux centraux.
 
-**Changement** : ajouter logique de parité pour retourner la moyenne des deux valeurs centrales en cas de taille paire, au lieu de retourner l'élément à l'index supérieur.
+**Test RED associé** : `test/stats.test.js:13-16` échoue (AssertionError: 3 !== 2.5).
 
-**Vérification** : test `test/stats.test.js:13-16` doit passer.
-
-**Risques** : aucun — modification localisée, pas de dépendance depuis `bin/index.js` spécifique à l'implémentation.
+**Dépendances** : aucune dépendance depuis d'autres modules — changement localisé et isolé.
 
 ---
 
-### Chemin 2 — Corriger la terminologie « CSV »
-**Zones d'impact** :
-- `package.json:4` (clé `description`)
-- `bin/index.js:2` (commentaire de shebang)
-- `README.md` (section Usage)
+### Zone B — Terminologie « CSV »
+**Incohérence** :
+- `package.json:4` (clé `description`) dit « statistiques sur fichiers CSV »
+- `bin/index.js:2` (commentaire) dit « CSV stats »
+- `README.md` (section Usage) dit « `data.csv` »
+- Implémentation réelle : `.split("\n").map(Number)` — parse un nombre par ligne uniquement
 
-**Changement attendu** : remplacer « fichiers CSV » par « fichiers texte (un nombre par ligne) ».
+**Impact** : divergence entre intention déclarée (pseudo-CSV monocolonne) et fait observé.
 
-**Vérification** : lecture manuelle, aucun test affecté.
-
----
-
-### Chemin 3 — Ajouter gestion d'erreur (si dans périmètre)
-**Zones d'impact** :
-- `bin/index.js:8` (argument absent)
-- `bin/index.js:9` (fichier absent / inaccessible)
-- `bin/index.js:10` (ligne non numérique)
-
-**Changement attendu** : `try/catch` + messages explicites utilisateur.
-
-**Vérification** : tests additionnels ou tests manuels sur cas d'erreur.
+**Dépendances** : aucune — problème de documentation, pas de code productif.
 
 ---
+
+### Zone C — Gestion d'erreur absente (`bin/index.js:8-10`)
+**Observation** : pas de `try/catch` pour captures ENOENT (fichier absent) ou TypeError (argument absent). Pas de validation pour lignes non numériques.
+
+**Comportement observé** :
+- Argument absent → TypeError Node brut
+- Fichier absent → ENOENT Node brut
+- Ligne non numérique → `Number()` → NaN silencieux
+
+**Preuves** : `bin/index.js:8-10` (code brut) ; résultats observables via tests manuels (cas d'erreur non testés).
 
 ## Schéma d'import et dépendances
 
@@ -300,15 +297,15 @@ src/stats.js
 
 ---
 
-## Fichiers critiques pour maintenabilité
+## Fichiers — Rôle et état
 
-| Fichier | Raison | Risque | Action recommandée |
-|---------|--------|--------|-------------------|
-| `src/stats.js` | Cœur métier — calcul | **Moyen** : anomalie médiane paire | Corriger ligne 10-11 |
-| `bin/index.js` | Point d'entrée — orchestration | **Élevé** : mélange I/O et logique ; pas de gestion d'erreur | Découper responsabilités si projet grandit |
-| `test/stats.test.js` | Autorité comportementale | **Faible** : tests corrects ; code qui diverge est le problème | Maintenir à jour |
-| `package.json` | Manifeste | **Faible** : documentation imprécise | Corriger description « CSV » |
-| `README.md` | Documentation utilisateur | **Faible** : terminologie imprécise | Corriger usage « CSV » |
+| Fichier | Rôle | État observé | Preuve |
+|---------|------|--|---|
+| `src/stats.js` | Cœur métier — calcul | Moyenne ✓, médiane impaire ✓, médiane paire ✗ | Test RED `test/stats.test.js:13-16` |
+| `bin/index.js` | Point d'entrée — orchestration | Golden path ✓, gestion d'erreur absente | Pas de `try/catch` ; crashes bruts observés |
+| `test/stats.test.js` | Autorité comportementale | 3 cas, 2 passent, 1 échoue (RED) | Exécution `npm test` |
+| `package.json` | Manifeste de distribution | Dépendances nulles ; description incohérente | Zéro `dependencies` ; « CSV » vs. réalité |
+| `README.md` | Documentation utilisateur | Incohérence terminologie | « CSV » vs. « un nombre par ligne » |
 
 ---
 

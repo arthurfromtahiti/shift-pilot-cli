@@ -28,7 +28,7 @@ Cœur mathématique : moyenne arithmétique et médiane d'une liste de nombres. 
 - Médiane sur listes impaires ✓ correcte
 - Médiane sur listes paires ✗ ANOMALIE — retourne l'élément central supérieur au lieu de la moyenne des deux centraux (`median([1,2,3,4])` → `3` au lieu de `2.5`)
 
-**Critère d'acceptation** : suite de tests de référence (voir `suite-tests` ci-dessous). Actuellement RED (2/3 tests passent).
+**Référence de vérité** : suite de tests en `node:test`. Actuellement RED (2/3 tests passent, 1 échoue sur la médiane paire).
 
 ### `application-cli` — Point d'entrée et packaging
 Orchestration complète : argue CLI → lecture fichier → parsing → calcul → affichage. Contrat de distribution en `package.json` (binaire `pilot-stats`, moteur Node ≥ 18, type `commonjs`).
@@ -38,14 +38,12 @@ Orchestration complète : argue CLI → lecture fichier → parsing → calcul �
 - Gestion d'erreur absente — crash natif Node sur argument absent ou fichier inexistant ✗
 - Décalage documentaire : package.json et README disent « CSV », code parse « un nombre par ligne » ✗
 
-**Critère d'acceptation** : parcours golden path (fichier valide → statistiques correctes affichées).
+**Référence** : parcours golden path (fichier valide → statistiques affichées) observable par `npm test` et exécution manuelle.
 
 ### `suite-tests` — Référence comportementale
 Trois tests unitaires en `node:test` + `node:assert/strict` (zéro dépendances externes). **Rôle explicite** : la suite est la source de vérité — « tout écart entre le comportement et les tests est une anomalie » (README). Actuellement RED (1 échoue sur le calcul de médiane paire).
 
-**État** : tests 3 · pass 2 · fail 1.
-
-**Critère d'acceptation** : tous les tests passent.
+**État** : tests 3 · pass 2 · fail 1 (échoue sur calcul de médiane paire, test RED en `test/stats.test.js:13-16`).
 
 ## Points d'attention transversaux
 
@@ -70,11 +68,11 @@ Argument absent → `TypeError: The "path" argument must be of type string` non 
 
 **Preuve** : `bin/index.js:8-10`, pas de `try/catch` ni de validation.
 
-## Zones critiques (priorité pour les modifications)
+## Zones de concentration observées
 
-- **`src/stats.js:10-11`** — Médiane paire. Correction : ajouter condition sur parité pour moyenner les deux valeurs centrales. Localisée, testable, dépendance forte.
-- **`bin/index.js:8-10`** — Parsing + orchestration. Zone où l'absence de gestion d'erreur rend le comportement opaque sur entrées malformées. Toute évolution (validations, options CLI) passe ici.
-- **Documentation (`package.json:4`, `bin/index.js:2`, `README.md`)** — Terminologie incohérente « CSV ». Correction : remplacer par « un nombre par ligne ».
+- **`src/stats.js:10-11`** — Médiane paire. Localisation de l'anomalie connue : retourne l'index central supérieur au lieu de moyenner les deux centraux. Test RED associé `test/stats.test.js:13-16`.
+- **`bin/index.js:8-10`** — Parsing + orchestration. Zone où l'absence de gestion d'erreur laisse les crashs Node bruts remontés à l'utilisateur : argument absent, fichier absent, ligne non numérique.
+- **Documentation (`package.json:4`, `bin/index.js:2`, `README.md`)** — Incohérence documentée entre déclaration « CSV » et implémentation réelle « un nombre par ligne ».
 
 ## Matrice de confiance
 
