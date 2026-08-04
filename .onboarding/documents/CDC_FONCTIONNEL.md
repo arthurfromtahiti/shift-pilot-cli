@@ -14,7 +14,7 @@
 **Rôle du dépôt lui-même** : banc d'essai pour la chaîne SHIFT/Paperclip — un cas réel minimaliste mais non trivial (calcul mathématique, suite de tests de référence, packaging CLI) pour valider le processus d'onboarding.
 
 ### Contexte organisationnel
-Aucun — le projet n'est pas adossé à une organisation décisionnelle. L'état RED (médiane paire erronée) est intentionnel au départ du seed, objectif pédagogique pour la chaîne.
+Aucun — le projet n'est pas adossé à une organisation décisionnelle. L'état RED (médiane paire erronée) était intentionnel au départ du seed, objectif pédagogique pour la chaîne ; l'anomalie a été corrigée dans le commit `6ad241d` (CLA-184).
 
 ## Acteurs et leurs capacités
 
@@ -93,7 +93,7 @@ Aucun — le projet n'est pas adossé à une organisation décisionnelle. L'éta
 
 ---
 
-### Parcours 3 — ANOMALIE : calcul de médiane sur entrée paire
+### Parcours 3 — CORRIGÉ : calcul de médiane sur entrée paire
 
 **Déclencheur** : utilisateur avec fichier :
 ```
@@ -103,21 +103,21 @@ Aucun — le projet n'est pas adossé à une organisation décisionnelle. L'éta
 4
 ```
 
-**Déroulement réel** (et divergence attendue) :
+**Déroulement après correction** (commit `6ad241d`, CLA-184) :
 1. Parsing → `[1, 2, 3, 4]`
 2. Tri → `[1, 2, 3, 4]`
-3. `median([1, 2, 3, 4])` — `src/stats.js:10-11` — retourne `sorted[Math.floor(4/2)] = sorted[2] = 3` ✗
-4. Affichage : `n=4 moyenne=2.5 mediane=3`
+3. `median([1, 2, 3, 4])` — `src/stats.js:10-14` — parité détectée, retourne `(sorted[1] + sorted[2]) / 2 = (2 + 3) / 2 = 2.5` ✓
+4. Affichage : `n=4 moyenne=2.5 mediane=2.5`
 
 **Attendu par la suite de référence** : médiane `2.5` (moyenne des deux valeurs centrales `[2, 3]`).
 
-**Réel** : médiane `3`.
+**Réel** : médiane `2.5` ✓
 
-**Résultat** : test RED `test/stats.test.js:13-16` (AssertionError: 3 !== 2.5).
+**Résultat** : test GREEN `test/stats.test.js:13-16` (pass 3 / fail 0).
 
-**Preuves** : `FUNCTIONAL_AUDIT` §Anomalie fonctionnelle ; `WORKFLOW_CALCULER_STATS` §Risques ; commit `a7038b1` (« état assumé »).
+**Preuves** : `FUNCTIONAL_AUDIT` §Anomalie fonctionnelle (CORRIGÉ) ; commit `a7038b1` (seed RED), commit `6ad241d` (fix CLA-184).
 
-**Impact métier** : tout résultat de médiane sur fichier pair est statistiquement incorrect. L'utilisateur n'en est pas avisé.
+**Historique** : avant le fix, le parcours retournait médiane `3` au lieu de `2.5` — voir commit `a7038b1` (état seed intentionnel).
 
 ---
 
