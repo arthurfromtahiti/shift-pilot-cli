@@ -279,10 +279,6 @@ Ces cas doivent **toujours passer** après toute modification, même mineure.
 **Test** : TC-AUTO-002 + TC-CLI-001
 **Vérification** : `npm test` passe test 2 ; invocation CLI sur fichier impair produit médiane correcte.
 
-### TC-REG-003 — Suite de tests ne gagne pas d'erreur
-**Test** : `npm test` → exit code et résumé
-**Vérification** : ne jamais avoir plus de 1 test en échec (actuellement TC-AUTO-003 est attendu en échec).
-
 ---
 
 ## Matrice de test

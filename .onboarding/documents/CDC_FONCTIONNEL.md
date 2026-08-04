@@ -168,7 +168,7 @@ abc
 **Déroulement réel** :
 1. Parsing → `[10, NaN, 20]`
 2. `mean([10, NaN, 20])` → `reduce(...) → 10 + NaN + 20 = NaN ; NaN / 3 = NaN`
-3. `median([10, NaN, 20])` → tri → `[NaN, 10, 20]` (NaN sort first en JS), médiane calculée sur valeur NaN ou à côté de NaN
+3. `median([10, NaN, 20])` → tri → médiane calculée incohérente en présence de NaN
 4. Affichage : `n=3 moyenne=NaN mediane=<NaN ou value incohérente>`
 
 **Comportement actuel** : pas d'erreur levée, NaN silencieusement injecté dans les calculs ; process exit 0 malgré résultats invalides.

@@ -131,7 +131,7 @@ const { mean, median } = require("../src/stats");
 
 **Zéro surface d'attaque chaîne d'approvisionnement npm** — aucune dépendance externe.
 
-**Imprécision documentaire** : clé `description` mentionne « fichiers CSV » ; réalité = « un nombre par ligne ». Corriger vers « statistiques sur fichiers texte (un nombre par ligne) ».
+**Imprécision documentaire** : clé `description` mentionne « fichiers CSV » ; réalité = « un nombre par ligne ». Écart identifié entre déclaration et implémentation.
 
 ---
 
