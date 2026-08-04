@@ -56,9 +56,10 @@ Sur le plan de la **robustesse**, le tableau est plus sévère. `bin/index.js` n
 
 1. **Ajouter un garde sur `process.argv[2]`** avant `fs.readFileSync` (`bin/index.js:8`) : `if (!chemin) { console.error("Usage: pilot-stats <fichier>"); process.exit(1); }` — une ligne, zéro ambiguïté.
 2. **Encapsuler `fs.readFileSync` dans un `try/catch`** (`bin/index.js:9`) pour retourner un message d'erreur lisible sur `ENOENT`/`EACCES` plutôt qu'une stack trace native.
-3. **Filtrer les valeurs non finies avant le calcul** (`bin/index.js:10`) : deux options selon la spec souhaitée.
-   - Option A — exclure uniquement les `NaN` (les lignes vides deviennent `0`) : ajouter `.filter(Number.isFinite)` après `.map(Number)`.
-   - Option B — ignorer aussi les lignes vides : filtrer la chaîne *avant* la conversion, puis filtrer les non-finis : `.split("\n").filter(s => s.trim() !== "").map(Number).filter(Number.isFinite)`.
+3. **Rejeter les entrées invalides avant le calcul** (`bin/index.js:10`) : deux problèmes distincts qui exigent deux filtres à deux niveaux différents — l'ordre est impératif.
+   - **Lignes vides → `0` silencieux** : `Number("") === 0`, donc `.filter(Number.isFinite)` appliqué *après* `.map(Number)` ne détecte pas les lignes vides — elles ont déjà été converties en `0`, valeur finie et non nulle. Le filtrage des lignes vides doit s'opérer *avant* la conversion numérique, au niveau de la chaîne : `.filter(s => s.trim() !== "")`.
+   - **Valeurs non numériques (ex. `"abc"`) → `NaN`** : `Number("abc")` vaut `NaN`. Appliqué *après* `.map(Number)`, `.filter(Number.isFinite)` éjecte ces `NaN` résiduels. Ce filtre n'a aucun effet sur les lignes vides (déjà converties en `0` fini).
+   - Chaîne complète couvrant les deux cas : `.split("\n").filter(s => s.trim() !== "").map(Number).filter(Number.isFinite)`. Inverser l'ordre — `.map(Number)` puis tenter de filtrer les chaînes — est impossible et ne permettrait pas de distinguer une ligne vide (`0`) d'un zéro légitime.
 
 ## Questions ouvertes
 
