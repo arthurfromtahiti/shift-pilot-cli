@@ -1,0 +1,11 @@
+{
+  "name": "shift-pilot-cli",
+  "version": "1.0.0",
+  "description": "Pilote de test SHIFT/Paperclip — statistiques sur fichiers CSV (une colonne de nombres).",
+  "type": "commonjs",
+  "bin": { "pilot-stats": "./bin/index.js" },
+  "scripts": { "test": "node --test test/*.test.js" },
+  "engines": { "node": ">=18" },
+  "license": "UNLICENSED",
+  "private": true
+}
