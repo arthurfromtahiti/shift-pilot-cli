@@ -6,7 +6,7 @@
 
 Le projet ne compte que 3 fichiers de code (26 lignes au total) et 1 fichier de test (17 lignes). Il n'existe pas de « gros fichier » ni de « module surchargé » au sens usuel. Les points chauds sont ici définis par leur criticité fonctionnelle et leur fragilité observable — non par leur taille. Deux fichiers concentrent l'essentiel du risque : `src/stats.js` (logique métier — le bug de médiane paire a été corrigé en CLA-184) et `bin/index.js` (point d'entrée sans garde-fous).
 
-## Résumé exécutif — MISE À JOUR CLA-251 + CLA-292
+## Résumé exécutif — MISE À JOUR CLA-251
 
 **Hotspots résolus :**
 1. ~~`src/stats.js:10-11` — Médiane paire~~ : **CORRIGÉ (CLA-184, commit `6ad241d`)**. Suite 3/3 verte.

@@ -8,7 +8,7 @@
 - **Acteurs** : utilisateur CLI, système de fichiers local, stdout
 - **Criticité** : Haute — c'est la raison d'être unique de l'outil ; tout le dépôt existe pour ce flux
 - **Confiance** : high
-- **Justification** : les 12 lignes de `bin/index.js` et les 14 lignes de `src/stats.js` ont été lues en intégralité — le flux est court et sans branche cachée. Plusieurs cas limites non triviaux sont présents (argument absent, ligne vide → `0`, ligne non numérique → `NaN`, médiane paire) ; chacun est tracé en section Risques et Règles métier avec preuves.
+- **Justification** : les 19 lignes de `bin/index.js` et les 31 lignes de `src/stats.js` ont été lues en intégralité — le flux est court et sans branche cachée. Plusieurs cas limites non triviaux sont présents (argument absent, fichier absent, fichier vide, valeur non-numérique, médiane paire) ; chacun est tracé en section Risques et Règles métier avec preuves.
 
 ## Objectif
 Permettre à un utilisateur technique de passer un fichier texte contenant un nombre par ligne et d'obtenir immédiatement sur la sortie standard le nombre d'éléments (`n`), la moyenne arithmétique (`moyenne`) et la médiane (`mediane`) de cette série. Aucun état n'est persisté ; le flux produit uniquement une ligne sur stdout puis se termine.
@@ -34,7 +34,7 @@ Permettre à un utilisateur technique de passer un fichier texte contenant un no
    - Filtre les invalides (où `Number.isNaN(values[i])`) et lève `Error("Valeurs non-numériques : ...")` si au moins une est trouvée
    - Le `try/catch` (`bin/index.js:12-17`) intercepte les erreurs, écrit sur stderr, et quitte avec code 1
 4. **Calcul de la moyenne** : appel à `mean(valeurs)` (`bin/index.js:19`) → `src/stats.js:3-5`. Somme tous les éléments par `reduce((acc, v) => acc + v, 0)` puis divise par `values.length`. Sur tableau vide : `0 / 0 = NaN` (impossible maintenant — `parseValues` rejette fichier vide).
-5. **Calcul de la médiane** : appel à `median(valeurs)` (`bin/index.js:19`) → `src/stats.js:8-14`. Copie le tableau (`[...values]`), trie par ordre croissant (`sort((a, b) => a - b)`), condition de parité : retourne `(sorted[mid-1] + sorted[mid]) / 2` si pair, `sorted[mid]` si impair (CORRIGÉ — CLA-184 + CLA-292).
+5. **Calcul de la médiane** : appel à `median(valeurs)` (`bin/index.js:19`) → `src/stats.js:8-14`. Copie le tableau (`[...values]`), trie par ordre croissant (`sort((a, b) => a - b)`), condition de parité : retourne `(sorted[mid-1] + sorted[mid]) / 2` si pair, `sorted[mid]` si impair (CORRIGÉ — CLA-184).
 6. **Impression du résultat** : `console.log(\`n=${valeurs.length} moyenne=${mean(valeurs)} mediane=${median(valeurs)}\`)` (`bin/index.js:19`) — une seule ligne sur stdout ; aucun formatage décimal supplémentaire.
 
 ## Règles métier
@@ -47,7 +47,7 @@ Permettre à un utilisateur technique de passer un fichier texte contenant un no
 ## Données
 - **Chemin de fichier** : argument positionnel `process.argv[2]` (`bin/index.js:8`) — chaîne de caractères, non validée
 - **Contenu brut** : chaîne UTF-8 lue par `fs.readFileSync` (`bin/index.js:9`)
-- **`valeurs`** : `Array<number>` produit par `.trim().split("\n").map(Number)` (`bin/index.js:10`) — peut contenir des `NaN`
+- **`valeurs`** : `Array<number>` produit par `parseValues()` (`src/stats.js:22-23`, `.split("\n").map(Number)`) — validation stricte, pas de `NaN` (erreur lancée si présent)
 - **`mean`** : nombre (flottant ou `NaN`) — `src/stats.js:3-5`
 - **`median`** : nombre (élément du tableau trié) — `src/stats.js:8-11`
 
@@ -62,10 +62,11 @@ Aucune intégration externe explicite visible. Le flux est entièrement local : 
 - ~~**Tableau vide**~~ : **RÉSOLU (CLA-251)**. `parseValues()` lève `Error("Le fichier est vide.")` avant d'atteindre le calcul. Test : `test/stats.test.js:22` (vert).
 
 ## Questions ouvertes
-- Le comportement attendu sur un fichier vide ou à une seule ligne n'est ni documenté ni testé. Qu'attend-on pour ces cas limites ?
-- Le séparateur décimal est-il toujours `.` (JS natif) ou doit-il supporter `,` (locales européennes) ?
-- Est-ce que le binaire est destiné à être installé globalement (`npm link` / `npm install -g`) ou uniquement invoqué via `node bin/index.js` ? Le `private: true` de `package.json:10` suggère qu'aucune publication npm n'est prévue, mais la clé `bin` laisse la porte ouverte.
-- La correction de la médiane paire est-elle prévue ou cet état est-il assumé durablement (le commit de seed le nomme « état assumé du seed ») ?
+- **Fichier vide** : maintenant documenté et testé (CLA-251) — lève `Error("Le fichier est vide.")`.
+- **Liste à un seul élément** : comportement non documenté ni testé. Qu'attend-on pour ce cas limite ?
+- **Séparateur décimal** : toujours `.` (JS natif) — aucun support pour `,` (locales européennes).
+- **Distribution du binaire** : est-il destiné à être installé globalement (`npm link` / `npm install -g`) ou uniquement invoqué via `node bin/index.js` ? Le `private: true` de `package.json:10` suggère qu'aucune publication npm n'est prévue, mais la clé `bin` laisse la porte ouverte.
+- **Médiane paire** : correction complète depuis CLA-184 — plus aucune anomalie à ce sujet.
 
 ## Preuves
 - `bin/index.js` — fichier entier (12 lignes), lu à cette session

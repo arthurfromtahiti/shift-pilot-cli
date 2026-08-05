@@ -2,7 +2,7 @@
 
 > **Confiance globale : high** — dépôt minuscule (**5 fichiers versionnés** d'après `git ls-files` : `README.md`, `package.json` + 3 fichiers de code — `bin/index.js`, `src/stats.js`, `test/stats.test.js`), entièrement lu ligne à ligne. La carte est complète, pas un échantillon.
 > **Mode d'onboarding : réconciliation** — la carte a été **produite une première fois en page blanche**, puis **reconfrontée au code courant le 2026-08-04** dans le cadre de CLA-164. À la reconfrontation, le distant `origin` ne porte toujours **aucun artefact d'onboarding** (`git ls-remote --heads origin 'onboarding/*'` vide ; seule `refs/heads/main` au SHA `a7038b1`), et le code est **inchangé depuis la première passe** (même SHA de tête `a7038b1`). La confrontation confirme la carte sans changement de fond : aucun domaine inventé, aucun pan fonctionnel manquant, état rouge de la suite réobservé à l'identique (voir note transverse). Le seul écart corrigé en réconciliation est le décompte de fichiers (4 → 5) ci-dessus.
-> **Périmètre** : workspace `shift-pilot-cli` uniquement. Branche par défaut `main`, tête `f1cb153` (mise à jour post-CLA-251 et CLA-292).
+> **Périmètre** : workspace `shift-pilot-cli` uniquement. Branche par défaut `main`, tête `f1cb153` (mise à jour post-CLA-251).
 
 ## Nature du projet
 
@@ -19,7 +19,7 @@ Outil **CLI mono-usage** (`type: commonjs`, Node ≥ 18), présenté par son pro
 - **Routes / points d'entrée** : aucune route ; consommé en interne par `bin/index.js` via `require("../src/stats")`. API du module : `module.exports = { mean, median, parseValues }` (`VÉRIFIÉ_CODE` — `src/stats.js:31`, SHA `f1cb153`).
 - **Indices de rattachement** : `src/stats.js`, symboles `mean` / `median`, `reduce`, `sort`, `Math.floor`.
 - **Types de workflows attendus** : « calculer une statistique sur une série de nombres » (moyenne, médiane) ; extensions probables (autres agrégats : min/max/écart-type) si le produit grandit.
-- **Preuves** : `src/stats.js` (module entier, 14 lignes) ; consommation `bin/index.js:6,12`.
+- **Preuves** : `src/stats.js` (module entier, 31 lignes avec `parseValues`) ; consommation `bin/index.js:6,12`.
 - **Dépend de la base** : non.
 - **Note d'observation (`OBSERVÉ`, hors périmètre de correction)** : la médiane d'une liste de **taille paire** ne suit **pas** la convention standard (moyenne des deux valeurs centrales). `median([1,2,3,4])` renvoie **`3`** — vérifié en exécutant `node -e '...median([1,2,3,4])'` → `3` — car `src/stats.js:10-11` retourne `sorted[Math.floor(length/2)]` sans moyenner. Voir la note transverse « État de la suite de tests » ci-dessous ; le *diagnostic* et la *correction* relèvent des étapes aval, pas de cette cartographie.
 

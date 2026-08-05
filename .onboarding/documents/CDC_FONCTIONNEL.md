@@ -184,7 +184,7 @@ abc
 ### Format d'entrée — Strict
 **Règle 1** : L'entrée est un fichier texte UTF-8 contenant **un nombre par ligne**, séparateur `\n` uniquement.
 
-**Codification** : `bin/index.js:10` — `.split("\n").map(Number)`.
+**Codification** : `src/stats.js:22-23` (dans `parseValues()`) — `.split("\n").map(Number)`.
 
 **Non géré** :
 - Fichier CSV réel (`.csv` avec colonnes, guillemets, séparateur `,`)
@@ -240,18 +240,18 @@ abc
 
 ---
 
-### Calcul de médiane paire — ANOMALIE
-**Règle 5 — ACTUELLE (ERRONÉE)** : Médiane de liste de taille paire = élément à l'index `Math.floor(length/2)` après tri croissant.
+### Calcul de médiane paire — CORRIGÉE (CLA-184)
+**Règle 5 — CORRIGÉE** : Médiane de liste de taille paire = moyenne des deux éléments centraux après tri croissant.
 
-**Codification** : `src/stats.js:10-11` — retourne `sorted[Math.floor(sorted.length / 2)]`.
+**Codification** : `src/stats.js:10-12` — retourne `(sorted[mid - 1] + sorted[mid]) / 2` pour les listes paires.
 
-**Exemple réel** : `median([1, 2, 3, 4])` → tri `[1, 2, 3, 4]`, index `Math.floor(4/2) = 2`, résultat `sorted[2] = 3` ✗.
+**Exemple réel** : `median([1, 2, 3, 4])` → tri `[1, 2, 3, 4]`, index `mid = 2`, résultat `(sorted[1] + sorted[2]) / 2 = (2 + 3) / 2 = 2.5` ✓.
 
-**Défini par le test de référence** : `2.5` (moyenne des deux centraux : `(2 + 3) / 2`).
+**Conforme au test de référence** : `2.5` (moyenne des deux centraux : `(2 + 3) / 2`).
 
-**Impact** : tout résultat de médiane sur fichier pair diverge de la référence — la valeur retournée est toujours le quartile supérieur, pas la moyenne des deux centraux.
+**Impact** : la médiane sur fichier pair retourne maintenant la valeur correcte.
 
-**Preuves** : test RED `test/stats.test.js:13-16` ; audit `FUNCTIONAL_AUDIT` §Anomalie fonctionnelle.
+**Preuves** : test passant `test/stats.test.js:13-16` (depuis CLA-184, commit `6ad241d`) ; suite complète 5/5 verte.
 
 **État** : ✗ erronée, test RED, anomalie connue assumée au seed.
 
@@ -275,13 +275,13 @@ abc
 
 **Déclaration explicite** : `README.md` — *« La suite de tests fait référence : tout écart entre le comportement et les tests est une anomalie »*.
 
-**Codification** : `package.json` clé `scripts.test` → `node --test test/*.test.js` ; `test/stats.test.js` (3 tests).
+**Codification** : `package.json` clé `scripts.test` → `node --test test/*.test.js` ; `test/stats.test.js` (5 tests, mise à jour CLA-251).
 
-**État actuel** : 3 tests · 2 passent · 1 échoue (médiane paire).
+**État actuel** : 5 tests · 5 passent · 0 échouent.
 
 **Interprétation** :
-- Le test échoué (`test/stats.test.js:13-16`) documente l'anomalie de médiane paire.
-- Les 2 tests passants (`test/stats.test.js:5-7`, `test/stats.test.js:9-11`) fixent le comportement correct pour moyenne et médiane impaire.
+- Tous les tests passent depuis CLA-184 (correction de médiane paire) et CLA-251 (ajout parseValues).
+- Tests couverts : moyenne, médiane impaire, médiane paire, fichier vide (erreur), valeur non-numérique (erreur).
 
 **Preuves** : audit `FUNCTIONAL_AUDIT` §Résumé exécutif ; `WORKFLOW_EXECUTER_SUITE_TESTS`.
 
@@ -336,7 +336,8 @@ abc
 - Authentification / contrôle d'accès (binaire sans état)
 
 ### Inachevé et indéterminable
-- **Cas limites non testés** : fichier vide, liste à un seul élément, valeurs négatives, décimales, très grandes valeurs (overflow). Aucun test, comportement non documenté.
+- **Cas limites non testés** : liste à un seul élément, valeurs négatives, décimales, très grandes valeurs (overflow). Aucun test, comportement non documenté.
+- **Fichier vide** : testé depuis CLA-251 (`test/stats.test.js:18-20`), lève `Error: Le fichier est vide.`
 - **Interaction avec les locales** : le séparateur décimal observé est toujours `.` (JavaScript natif) ; pas de support pour `,` (locales européennes).
 - **Gestion d'erreur** : erreurs I/O et argument absent remontent comme crashes Node bruts, non capturées en `bin/index.js`.
 
@@ -352,11 +353,11 @@ abc
 
 L'état courant du dépôt peut être résumé par :
 
-1. Tests actuels : `test/stats.test.js` contient 3 cas (moyenne, médiane impaire, médiane paire)
+1. Tests actuels : `test/stats.test.js` contient 5 cas (moyenne, médiane impaire, médiane paire, fichier vide, valeur non-numérique) — tous verts
 2. Golden path : fichier valide bien formé → affichage `n=<nombre> moyenne=<m> mediane=<d>`
 3. Dépendances : zéro dépendance npm externe
-4. Testabilité : `src/stats.js` exporte fonctions pures (`mean`, `median`)
-5. Comportements observés : moyenne correcte, médiane impaire correcte, médiane paire erronée (test RED)
+4. Testabilité : `src/stats.js` exporte fonctions pures (`mean`, `median`, `parseValues`)
+5. Comportements observés : moyenne correcte, médiane impaire correcte, médiane paire correcte (CLA-184), validation stricte (CLA-251)
 
 ---
 
@@ -376,8 +377,7 @@ L'état courant du dépôt peut être résumé par :
 
 ## Questions ouvertes persistantes
 
-1. **Médiane paire** : le test RED est-il volontaire (seed pédagogique) ou non ?
-2. **Gestion d'erreur** : aucune garde actuellement (argument absent, fichier absent, ligne non numérique) → crash Node.
-3. **Incohérence documentaire** : « CSV » vs. « un nombre par ligne » reste divergente.
-4. **Cas limites** : comportement sur fichier vide, liste d'un seul élément, valeurs négatives non spécifiés ni testés.
-5. **Scopes testés** : suite actuellement à 3 cas (moyenne, médiane impaire, médiane paire).
+1. **Gestion d'erreur** : argument absent et fichier absent remontent comme crashes Node bruts (non capturés en `bin/index.js`).
+2. **Incohérence documentaire** : « CSV » vs. « un nombre par ligne » reste divergente dans `package.json` et `README.md`.
+3. **Cas limites non testés** : liste d'un seul élément, valeurs négatives, décimales, très grandes valeurs — comportement non spécifié ni testé.
+4. **Couverture de tests** : suite actuellement à 5 cas (moyenne, médiane impaire, médiane paire, fichier vide, valeur non-numérique).

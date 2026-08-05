@@ -24,7 +24,7 @@ shift-pilot-cli/
 
 **Rôle** : logique métier pure, module réutilisable.
 
-**Fichier principal** : `src/stats.js` (14 lignes)
+**Fichier principal** : `src/stats.js` (31 lignes)
 
 **Exports** :
 ```javascript
@@ -52,9 +52,9 @@ module.exports = { mean, median, parseValues }
 
 **Dépendances** : aucune.
 
-**État observable** : 2 tests passent (`mean`, `median` impair), 1 échoue (`median` pair, test RED `test/stats.test.js:13-16`).
+**État observable** : 5 tests passent (`mean`, `median` impair, `median` pair, fichier vide, valeur non-numérique). Tous verts depuis CLA-184.
 
-**Zone sensible** : ligne 10-11 (implémentation de médiane paire, source du test RED).
+**Zone sensible** : aucune. Le code est stable et tous les tests passent.
 
 ---
 
@@ -170,7 +170,7 @@ const { mean, median, parseValues } = require("../src/stats");
 ```javascript
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { mean, median } = require("../src/stats");
+const { mean, median, parseValues } = require("../src/stats");
 ```
 
 **Tests** (5 total, mise à jour CLA-251) :
@@ -258,9 +258,9 @@ const { mean, median } = require("../src/stats");
 ## Zones de concentration — éléments sensibles
 
 ### Zone A — Médiane paire (`src/stats.js:10-11`)
-**Observation** : implémentation retourne l'élément à l'index `Math.floor(length/2)` au lieu de moyenner les deux centraux.
+**Observation** : implémentation corrigée (CLA-184) — retourne maintenant `(sorted[mid-1] + sorted[mid]) / 2` pour les listes paires.
 
-**Test RED associé** : `test/stats.test.js:13-16` échoue (AssertionError: 3 !== 2.5).
+**Test associé** : `test/stats.test.js:13-16` passe depuis CLA-184 (AssertionError résolu).
 
 **Dépendances** : aucune dépendance depuis d'autres modules — changement localisé et isolé.
 
@@ -296,14 +296,16 @@ bin/index.js
   ├── require("fs")                   [natif Node]
   └── require("../src/stats")
       ├── mean()                       [fonction exportée]
-      └── median()                     [fonction exportée]
+      ├── median()                     [fonction exportée]
+      └── parseValues()                [fonction exportée]
 
 test/stats.test.js
   ├── require("node:test")            [natif Node ≥ 18]
   ├── require("node:assert/strict")   [natif Node ≥ 18]
   └── require("../src/stats")
       ├── mean()
-      └── median()
+      ├── median()
+      └── parseValues()
 
 src/stats.js
   [aucune dépendance — fonctions pures]
@@ -337,7 +339,7 @@ src/stats.js
 | Dépendances npm externes | 0 | Zéro risque chaîne d'approvisionnement |
 | Modules Node natifs utilisés | 3 (`fs`, `test`, `assert/strict`) | Tous standard ≥ 18 |
 | Niveaux de répertoires | 2 (`bin/`, `src/`, `test/`) | Plat, pas d'abstraction prématurée |
-| Fonction(s) exportée(s) | 2 (`mean`, `median`) | API claire et nommée |
+| Fonction(s) exportée(s) | 3 (`mean`, `median`, `parseValues`) | API claire et nommée |
 
 ---
 
@@ -348,9 +350,9 @@ src/stats.js
 **Qualité** :
 - ✓ Module métier testé en isolation
 - ✓ Zéro dépendance externe
-- ✗ Pas de gestion d'erreur dans le point d'entrée
-- ✗ Responsabilités mélangées dans `bin/index.js`
-- ✗ Pas de fonction nommée intermédiaire pour testing du parsing
+- ✓ Fonction nommée `parseValues()` pour testing du parsing (CLA-251)
+- ✓ Gestion d'erreur au point d'entrée (try/catch dans bin/index.js)
+- ✗ Responsabilités mélangées dans `bin/index.js` (IO et orchestration)
 
 **Adaptation au rôle** : architecture juste pour la taille et le rôle (banc d'essai minimaliste). Serait problématique si le périmètre doublait.
 
@@ -358,7 +360,7 @@ src/stats.js
 
 ## Mises à jour de la cartographie
 
-Cette cartographie a été **reconfrontée au code courant le 2026-08-04** (réconciliation CLA-164), puis **mise à jour post-CLA-251 et CLA-292 (SHA `f1cb153`)**. 
+Cette cartographie a été **reconfrontée au code courant le 2026-08-04** (réconciliation CLA-164), puis **mise à jour post-CLA-251 (SHA `f1cb153`)**. 
 
 Changements appliqués :
 - `src/stats.js` : ajout de la fonction `parseValues()` (CLA-251), implémentation de validation stricte
