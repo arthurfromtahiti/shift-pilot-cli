@@ -1,6 +1,9 @@
 // Statistiques élémentaires sur une liste de nombres.
 
 function mean(values) {
+  if (values.length === 0) {
+    throw new Error("Aucune valeur numérique à analyser dans ce fichier.");
+  }
   const sum = values.reduce((acc, v) => acc + v, 0);
   return sum / values.length;
 }
