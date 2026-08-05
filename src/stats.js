@@ -14,4 +14,18 @@ function median(values) {
   return sorted[mid];
 }
 
-module.exports = { mean, median };
+function parseValues(content) {
+  const trimmed = content.trim();
+  if (trimmed === "") {
+    throw new Error("Le fichier est vide.");
+  }
+  const lines = trimmed.split("\n");
+  const values = lines.map(Number);
+  const invalides = lines.filter((_, i) => Number.isNaN(values[i]));
+  if (invalides.length > 0) {
+    throw new Error(`Valeurs non-numériques : ${invalides.join(", ")}`);
+  }
+  return values;
+}
+
+module.exports = { mean, median, parseValues };
