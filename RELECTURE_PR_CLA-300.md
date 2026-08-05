@@ -2,6 +2,66 @@
 
 ---
 
+## Verdict — Passe 4 (2026-08-05, commit `785ded2`)
+
+> Relecteur : agent d2fa6c95 (Relecteur de documents)
+> Branche relue : `onboarding/CLA-251-CLA-292-doc-updates`, tête `785ded2`
+> Code de référence relu : `src/stats.js` (31 lignes), `bin/index.js` (19 lignes), `test/stats.test.js` (24 lignes) — SHA `f1cb153`
+
+### Verdict global
+
+**À corriger** — 2 défauts résiduels dans `CARTE_DES_DOMAINES.md`, jamais identifiés dans les passes précédentes. Le reste des artefacts est propre.
+
+---
+
+### Corrections de Passe 3 correctement appliquées ✓
+
+- **[RB4]** CARTOGRAPHIE_CODE.md:282-291 — Zone C réécrite : titre corrigé, comportements observés mis à jour, preuves pointant `bin/index.js:12-17` et `src/stats.js:17-28` ✓
+- **[NM1]** CDC_FONCTIONNEL.md:263 — `bin/index.js:12` → `bin/index.js:19` (template literal) ✓
+
+---
+
+### Problème bloquant restant
+
+#### NB1 — CARTE_DES_DOMAINES.md:9 — Citation de code stale dans « Nature du projet »
+
+**Citation actuelle** : `(contenu.trim().split("\n").map(Number)`, `bin/index.js:10`)`
+
+**Réalité** : après CLA-251 (SHA `f1cb153`), cette logique de découpage et de conversion a été extraite dans `parseValues()` — elle se trouve désormais dans `src/stats.js:22-23`, pas dans `bin/index.js`. La ligne 10 de `bin/index.js` est une **ligne vide** (VÉRIFIÉ_CODE `f1cb153`). Un lecteur qui suit cette référence trouve du vide et comprend à tort que la logique d'ingestion réside dans le binaire CLI.
+
+**Correction attendue** :
+
+```markdown
+le binaire lit un fichier passé en argument et le découpe **ligne par ligne** (logique extraite dans `parseValues()` — `src/stats.js:22-23` depuis CLA-251)
+```
+
+---
+
+### Problème mineur restant
+
+#### NM2 — CARTE_DES_DOMAINES.md:35 — Décompte de lignes stale pour `bin/index.js`
+
+**Citation actuelle** : `bin/index.js (fichier entier, 12 lignes)`
+
+**Réalité** : `bin/index.js` compte 19 lignes après CLA-251 (même correction appliquée à `CARTOGRAPHIE_CODE.md:66` en RM2, mais oubliée ici).
+
+**Correction** : `bin/index.js (fichier entier, 19 lignes)`
+
+---
+
+### Recommandations de correction (ordonnées)
+
+1. **[NB1]** CARTE_DES_DOMAINES.md:9 — Remplacer la citation `bin/index.js:10` par la référence correcte `src/stats.js:22-23 (parseValues)`.
+2. **[NM2]** CARTE_DES_DOMAINES.md:35 — `12 lignes` → `19 lignes`.
+
+---
+
+> Relecteur : agent d2fa6c95 (Relecteur de documents)
+> Branche relue : `onboarding/CLA-251-CLA-292-doc-updates`, tête `785ded2`
+> Code de référence relu : `src/stats.js`, `bin/index.js`, `test/stats.test.js` — SHA `f1cb153`
+
+---
+
 ## Verdict — Passe 3 (2026-08-05, commit `0c1f009`)
 
 > Relecteur : agent d2fa6c95 (Relecteur de documents)
