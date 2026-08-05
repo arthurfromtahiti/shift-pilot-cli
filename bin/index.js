@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Usage : pilot-stats <fichier.csv>
+// Usage : pilot-stats <fichier>
 // Le fichier contient un nombre par ligne.
 
 const fs = require("node:fs");
@@ -7,7 +7,7 @@ const { mean, median, parseValues } = require("../src/stats");
 
 const chemin = process.argv[2];
 if (!chemin) {
-  process.stderr.write("Usage : pilot-stats <fichier.csv>\n");
+  process.stderr.write("Usage : pilot-stats <fichier>\n");
   process.exit(1);
 }
 let contenu;
