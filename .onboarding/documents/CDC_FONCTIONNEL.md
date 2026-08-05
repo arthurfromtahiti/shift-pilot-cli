@@ -62,14 +62,14 @@ Aucun — le projet n'est pas adossé à une organisation décisionnelle. L'éta
 **Déroulement attendu** :
 1. `bin/index.js:8` — `process.argv[2]` = `"data.txt"` (valide)
 2. `bin/index.js:9` — `fs.readFileSync("data.txt", "utf8")` charge le contenu brut
-3. `bin/index.js:10` — `.trim().split("\n").map(Number)` → tableau `[9, 1, 5]`
-4. `bin/index.js:12` — `mean([9, 1, 5])` → `(9 + 1 + 5) / 3 = 5`
-5. `bin/index.js:12` — `median([9, 1, 5])` → tri `[1, 5, 9]`, index `Math.floor(3/2) = 1`, résultat `5` ✓
+3. `bin/index.js:13` — `parseValues(contenu)` → `src/stats.js:17-28` — valide le contenu, retourne `[9, 1, 5]`
+4. `bin/index.js:19` — `mean([9, 1, 5])` → `(9 + 1 + 5) / 3 = 5`
+5. `bin/index.js:19` — `median([9, 1, 5])` → tri `[1, 5, 9]`, index `Math.floor(3/2) = 1`, résultat `5` ✓
 6. Affichage : `n=3 moyenne=5 mediane=5`
 
 **Résultat** : sortie correcte, process exit 0.
 
-**Preuves** : `WORKFLOW_CALCULER_STATS` §Étapes ; test passant `test/stats.test.js:9-11`.
+**Preuves** : `WORKFLOW_CALCULER_STATS` §Étapes ; test passant `test/stats.test.js:9-11` ; code `bin/index.js:6-19`, `src/stats.js:17-28`, SHA `f1cb153`.
 
 ---
 
@@ -83,7 +83,7 @@ Aucun — le projet n'est pas adossé à une organisation décisionnelle. L'éta
 ```
 
 **Déroulement** :
-1. Parsing → `[2, 4, 6]`
+1. Validation et parsing via `parseValues()` → `[2, 4, 6]` (VÉRIFIÉ_CODE — `src/stats.js:17-28`)
 2. `mean([2, 4, 6])` — `src/stats.js:3-5` — `reduce((acc, v) => acc + v, 0) / 3` → `12 / 3 = 4` ✓
 3. Affichage : `n=3 moyenne=4 mediane=<valeur_médiane>`
 
@@ -131,7 +131,7 @@ Aucun — le projet n'est pas adossé à une organisation décisionnelle. L'éta
 3. Processus crash, exit code ≠ 0
 4. Affichage utilisateur : `TypeError: The "path" argument must be of type string` (message technique Node.js, cryptique)
 
-**Comportement actuel** : crash Node non piloté, pas de garde en `bin/index.js:8-9`.
+**Comportement actuel** : crash Node non piloté, pas de garde en `bin/index.js:8-9` (VÉRIFIÉ_CODE — SHA `f1cb153`).
 
 **État** : ⚠ risque documenté, anomalie assumée (zone critique, pas d'error handling).
 
@@ -156,7 +156,7 @@ Aucun — le projet n'est pas adossé à une organisation décisionnelle. L'éta
 
 ---
 
-### Parcours 6 — RISQUE : entrée mal formée (ligne non numérique)
+### Parcours 6 — CORRIGÉ : entrée mal formée (ligne non numérique)
 
 **Déclencheur** : fichier contenant :
 ```
@@ -165,17 +165,17 @@ abc
 20
 ```
 
-**Déroulement réel** :
-1. Parsing → `[10, NaN, 20]`
-2. `mean([10, NaN, 20])` → `reduce(...) → 10 + NaN + 20 = NaN ; NaN / 3 = NaN`
-3. `median([10, NaN, 20])` → tri → médiane calculée incohérente en présence de NaN
-4. Affichage : `n=3 moyenne=NaN mediane=<NaN ou value incohérente>`
+**Déroulement après correction (CLA-251)** :
+1. `bin/index.js:13` — `parseValues(contenu)` appelé
+2. `src/stats.js:22-27` — détecte la ligne non-numérique `"abc"`, lève `Error("Valeurs non-numériques : abc")`
+3. `bin/index.js:14-16` — le `catch` capte l'erreur, écrit le message sur stderr et quitte avec code 1
+4. Affichage : `Valeurs non-numériques : abc` (stderr), process exit 1
 
-**Comportement actuel** : pas d'erreur levée, NaN silencieusement injecté dans les calculs ; process exit 0 malgré résultats invalides.
+**Comportement amélioré** : validation stricte, erreur explicite, exit code non-zéro (VÉRIFIÉ_CODE — `src/stats.js:17-28`, SHA `f1cb153`).
 
-**État** : ⚠ risque documenté, anomalie assumée (pas de validation d'entrée en `bin/index.js:10` — `.map(Number)` convertit tout, y compris non-nombres).
+**État** : ✓ CORRIGÉ — voir règle métier « Validation des valeurs » ci-dessous.
 
-**Preuves** : `WORKFLOW_CALCULER_STATS` §Risques ; `bin/index.js:10`, pas de filtre.
+**Preuves** : `test/stats.test.js:23-24` (test vert « parseValues — valeur non-numérique → erreur ») ; `bin/index.js:6-19`, `src/stats.js:17-28`.
 
 ---
 
@@ -195,15 +195,20 @@ abc
 
 ---
 
-### Format d'entrée — Lignes vides et non numériques
-**Règle 2** : Lignes vides et non numériques sont silencieusement converties via `Number()`.
+### Format d'entrée — Validation et rejet des entrées invalides
+**Règle 2 — CORRIGÉE (CLA-251)** : Les lignes vides et non numériques déclenchent une erreur explicite et arrêtent l'exécution.
 
-- Ligne vide (`""`) → `Number("") = 0` (injecté dans le calcul)
-- Ligne non numérique (`"abc"`) → `Number("abc") = NaN` (injecté dans le calcul)
+- Ligne non numérique (`"abc"`) → `parseValues()` lève `Error("Valeurs non-numériques : abc")`
+- Fichier entièrement vide → `parseValues()` lève `Error("Le fichier est vide.")`
 
-**Codification** : `bin/index.js:10` — `.map(Number)`, comportement natif JavaScript.
+**Codification** : `src/stats.js:17-28` — `parseValues()` valide les lignes (VÉRIFIÉ_CODE — SHA `f1cb153`).
 
-**Cas problématique observé** : un utilisateur passant un fichier avec une ligne vide obtient un résultat silencieusement faussé. Exemple : fichier `[10, "", 20]` → parsing `[10, 0, 20]` → moyenne `10` au lieu de `15`. Aucune validation, aucun avertissement.
+**Implémentation** :
+- `src/stats.js:18-20` : rejette le fichier vide après `.trim()`
+- `src/stats.js:22-27` : compare chaque ligne à son résultat `Number()`, accumule les invalides, lève une erreur liste si au moins une est non-numérique
+- `bin/index.js:12-17` : enveloppe l'appel à `parseValues()` dans un `try/catch`, écrit l'erreur sur stderr et quitte avec code 1
+
+**État** : ✓ rejet explicite des entrées invalides (conforme aux tests `test/stats.test.js:22-24`).
 
 ---
 

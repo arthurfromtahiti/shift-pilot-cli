@@ -28,7 +28,7 @@ shift-pilot-cli/
 
 **Exports** :
 ```javascript
-module.exports = { mean, median }
+module.exports = { mean, median, parseValues }
 ```
 
 **Fonctions** :
@@ -39,11 +39,16 @@ module.exports = { mean, median }
   - ✓ Correct, testé, preuve `test/stats.test.js:5-7`
   
 - `median(values)` — médiane
-  - Ligne 8-11
+  - Ligne 8-14
   - Signature : `Array<number>` → `number | NaN`
-  - Implémentation : copie du tableau, tri croissant, retour index `Math.floor(length/2)`
-  - ✓ Correct sur listes impaires, preuve `test/stats.test.js:9-11`
-  - ✗ **ANOMALIE sur listes paires** : retourne index supérieur au lieu de moyenne des deux centraux, preuve `test/stats.test.js:13-16` (RED)
+  - Implémentation : copie du tableau, tri croissant, condition de parité — retourne moyenne des deux centraux si pair, élément central si impair
+  - ✓ Correct sur listes impaires et paires, preuve `test/stats.test.js:9-11` et `test/stats.test.js:13-16`, SHA `f1cb153`
+  
+- `parseValues(content)` — validation et parsing du contenu du fichier (NOUVEAU — CLA-251)
+  - Ligne 17-28
+  - Signature : `string` → `Array<number>` ou lève `Error`
+  - Implémentation : `.trim()` le contenu, rejette si vide, `.split("\n")` en lignes, `.map(Number)` chaque ligne, filtre les invalides (où `Number.isNaN(values[i])`), lève une erreur si invalides détectées
+  - ✓ Validation stricte, tests verts `test/stats.test.js:22-24`, SHA `f1cb153`
 
 **Dépendances** : aucune.
 
@@ -78,30 +83,30 @@ module.exports = { mean, median }
    - Pas de `try/catch` — exceptions ENOENT/EACCES non gérées
    - Flux de sortie : crash process sur erreur
    
-3. **Parsing et conversion** (ligne 10) : `const valeurs = contenu.trim().split("\n").map(Number);`
-   - `trim()` → supprime espaces/retours en tête/queue
-   - `split("\n")` → séparateur dur, pas de support `,` ou autres séparateurs
-   - `map(Number)` → conversion native (ligne vide → `0`, non-numérique → `NaN`)
-   - Pas de validation — NaN injecté silencieusement
+3. **Parsing et validation** (ligne 13) : `valeurs = parseValues(contenu)` (CORRIGÉ — CLA-251)
+   - Délègue à `src/stats.js:17-28` la validation complète
+   - Lève une erreur explicite si fichier vide ou contient des valeurs non-numériques
+   - Le `try/catch` (ligne 12-17) intercepte et affiche l'erreur sur stderr, puis quitte avec code 1
+   - Comportement amélioré : rejet des entrées invalides au lieu d'injection silencieuse de NaN
    
-4. **Calcul et affichage** (ligne 12) : `console.log(\`n=${valeurs.length} moyenne=${mean(valeurs)} mediane=${median(valeurs)}\`);`
+4. **Calcul et affichage** (ligne 19) : `console.log(\`n=${valeurs.length} moyenne=${mean(valeurs)} mediane=${median(valeurs)}\`);`
    - Appel des fonctions `mean` et `median` du module `src/stats.js`
    - Format de sortie invariant : `n=<nombre> moyenne=<m> mediane=<d>`
    - Pas de formatage décimal supplémentaire
 
 **Imports** (ligne 5-6) :
 ```javascript
-const fs = require("fs");
-const { mean, median } = require("../src/stats");
+const fs = require("node:fs");
+const { mean, median, parseValues } = require("../src/stats");
 ```
 
 **Dépendances** : `src/stats.js` (logique métier) ; module natif `fs`.
 
 **Observé** :
-- Absence de gestion d'erreur : crash natif Node sur argument absent ou fichier inexistant
-- Absence de validation d'entrée : NaN silencieusement injecté via `map(Number)`
-- Responsabilités concentrées (I/O, parsing, orchestration, affichage) — 12 lignes non décomposées
-- Pas de extraction de fonction testable pour parsing indépendant de CLI
+- Absence de gestion d'erreur I/O : crash natif Node sur argument absent ou fichier inexistant (non modifié par CLA-251)
+- Validation d'entrée améliorée (CLA-251) : `parseValues()` extraite et testée en isolation
+- Responsabilités concentrées (I/O, orchestration, affichage) mais parsing validant extrait vers `src/stats.js`
+- Parsing maintenant testable indépendamment de CLI (tests `test/stats.test.js:22-24`)
 
 **État du golden path** : fichier valide bien formé → résultat correct sur stdout (observable `npm test`, tests TC-CLI-001 et TC-CLI-002 en CAHIER_RECETTE).
 
@@ -168,7 +173,7 @@ const assert = require("node:assert/strict");
 const { mean, median } = require("../src/stats");
 ```
 
-**Tests** (3 total) :
+**Tests** (5 total, mise à jour CLA-251) :
 
 #### Test 1 — Moyenne
 - Ligne 5-7
@@ -188,20 +193,34 @@ const { mean, median } = require("../src/stats");
 - Ligne 13-16
 - Cas : `median([1, 2, 3, 4])`
 - Attendu : `2.5` (moyenne des deux centraux `2` et `3`)
-- État : ✗ **RED**
-- Raison : code retourne `3` (`sorted[Math.floor(4/2)] = sorted[2] = 3`)
-- Preuves : commit `a7038b1` (« état assumé »), audit `FUNCTIONAL_AUDIT` §Anomalie
+- État : ✓ **PASS** (CORRIGÉ — CLA-184, commit `6ad241d`)
+- Preuve : code retourne maintenant `2.5` (`if (parité paire) return (sorted[mid-1] + sorted[mid]) / 2`)
+- Preuves : commit `6ad241d`, test vert, audit `FUNCTIONAL_AUDIT` §Anomalie (CORRIGÉE)
 
-**Rapport** : `npm test` → `tests 3 · pass 2 · fail 1`, exit code `1`.
+#### Test 4 — parseValues — fichier vide → erreur
+- Ligne 22-23 (NOUVEAU — CLA-251)
+- Cas : `parseValues("")`
+- Attendu : levée de `Error("Le fichier est vide.")`
+- État : ✓ PASS
+- Preuve : `src/stats.js:18-20` lève l'erreur, test intercepte et valide
+
+#### Test 5 — parseValues — valeur non-numérique → erreur
+- Ligne 24 (NOUVEAU — CLA-251)
+- Cas : `parseValues("1\nabc\n3")`
+- Attendu : levée de `Error("Valeurs non-numériques : abc")`
+- État : ✓ PASS
+- Preuve : `src/stats.js:24-27` détecte `"abc"` comme invalide, lève l'erreur
+
+**Rapport** : `npm test` → `tests 5 · pass 5 · fail 0`, exit code `0` (tous verts — CLA-251 + CLA-184 corrigés).
 
 **Dépendances** : `src/stats.js` (module testé) ; modules natifs.
 
 **Critères d'acceptation du domaine** :
-- Tous les 3 tests passent
-- Couverture des cas « moyenne simple », « médiane impaire », « médiane paire »
-- Aucun test sur cas limites (vide, un élément, NaN) — hors périmètre actuel
+- Tous les 5 tests passent ✓
+- Couverture : « moyenne simple », « médiane impaire », « médiane paire », « fichier vide », « valeur non-numérique »
+- Aucun test sur cas limites (un élément, NaN dans l'entrée) — hors périmètre actuel
 
-**Zone critique** : test 3 (diagnostic de l'anomalie, rejet actuel du code).
+**Zone critique** : tests 4-5 (nouveaux, validation de `parseValues()` — CLA-251).
 
 ---
 
@@ -301,9 +320,9 @@ src/stats.js
 
 | Fichier | Rôle | État observé | Preuve |
 |---------|------|--|---|
-| `src/stats.js` | Cœur métier — calcul | Moyenne ✓, médiane impaire ✓, médiane paire ✗ | Test RED `test/stats.test.js:13-16` |
-| `bin/index.js` | Point d'entrée — orchestration | Golden path ✓, gestion d'erreur absente | Pas de `try/catch` ; crashes bruts observés |
-| `test/stats.test.js` | Autorité comportementale | 3 cas, 2 passent, 1 échoue (RED) | Exécution `npm test` |
+| `src/stats.js` | Cœur métier — calcul + validation | Moyenne ✓, médiane ✓, parseValues() ✓ | Tests 5/5 verts (CLA-251 + CLA-184) |
+| `bin/index.js` | Point d'entrée — orchestration | Golden path ✓, validation appelée, I/O non gardée | `try/catch` autour parseValues ; pas de garde argument/fichier |
+| `test/stats.test.js` | Autorité comportementale | 5 cas, tous passent (verts) | Exécution `npm test` → tests 5 / pass 5 / fail 0 |
 | `package.json` | Manifeste de distribution | Dépendances nulles ; description incohérente | Zéro `dependencies` ; « CSV » vs. réalité |
 | `README.md` | Documentation utilisateur | Incohérence terminologie | « CSV » vs. « un nombre par ligne » |
 
@@ -339,4 +358,12 @@ src/stats.js
 
 ## Mises à jour de la cartographie
 
-Cette cartographie a été **reconfrontée au code courant le 2026-08-04** (réconciliation CLA-164). Aucun changement structural détecté depuis la première passe — code inchangé au SHA `a7038b1`, aucun artefact d'onboarding sur le distant. La présente cartographie est à jour.
+Cette cartographie a été **reconfrontée au code courant le 2026-08-04** (réconciliation CLA-164), puis **mise à jour post-CLA-251 et CLA-292 (SHA `f1cb153`)**. 
+
+Changements appliqués :
+- `src/stats.js` : ajout de la fonction `parseValues()` (CLA-251), implémentation de validation stricte
+- `bin/index.js` : appel à `parseValues()` au lieu de parsing direct, ajout du `try/catch`
+- `test/stats.test.js` : 2 nouveaux tests pour `parseValues()` fichier vide et valeur non-numérique (CLA-251)
+- Artefact `.onboarding/` : mis à jour pour refléter le code actuel (cette cartographie)
+
+La présente cartographie est à jour au SHA `f1cb153`.
