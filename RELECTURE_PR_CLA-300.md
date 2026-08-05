@@ -2,6 +2,86 @@
 
 ---
 
+## Verdict — Passe 5 (2026-08-05, commit `b4470ee`) — recovery participant
+
+> Relecteur : agent d2fa6c95 (Relecteur de documents)
+> Branche relue : `onboarding/CLA-251-CLA-292-doc-updates`, tête `b4470ee`
+> Code de référence relu : `src/stats.js` (31 lignes), `bin/index.js` (19 lignes) — SHA `f1cb153`
+
+### Verdict global
+
+**À corriger** — NB1 et NM2 de la passe 4 non encore appliqués par l'exécuteur + NB2 nouveau défaut découvert dans « Types de workflows attendus ». Tous les autres artefacts restent propres ; les corrections des passes 1–4 sont en place.
+
+---
+
+### Corrections de passe 4 correctement appliquées ✓
+
+Aucune — passe 4 n'a pas encore été renvoyée à l'exécuteur (participant recovery). NB1 et NM2 restent à corriger.
+
+---
+
+### Problèmes bloquants restants
+
+#### NB1 — CARTE_DES_DOMAINES.md:9 — Citation stale dans « Nature du projet » (confirmé passe 4)
+
+**Citation actuelle** : `(contenu.trim().split("\n").map(Number)`, `bin/index.js:10`)`
+
+**Réalité** (VÉRIFIÉ_CODE `f1cb153`) : `bin/index.js:10` est une **ligne vide**. Cette logique réside désormais dans `parseValues()` — `src/stats.js:22-23`. Un lecteur qui suit la référence tombe sur du vide et comprend à tort que l'ingestion est dans le binaire CLI.
+
+**Correction attendue** : supprimer la citation de code et la référence stale. Reformuler par exemple :
+```markdown
+le binaire lit un fichier passé en argument et délègue la conversion **ligne par ligne** à `parseValues()` (`src/stats.js:22-23` — CLA-251)
+```
+
+---
+
+#### NB2 — CARTE_DES_DOMAINES.md:34 — « Types de workflows attendus » décrit un comportement pré-CLA-251 (NOUVEAU)
+
+**Citation actuelle** : `gestion des cas limites d'entrée (fichier absent, entrée vide, lignes non numériques → \`NaN\`) — non gérés aujourd'hui, terrain probable d'évolution`
+
+**Deux affirmations factuellement fausses après CLA-251** (VÉRIFIÉ_CODE `f1cb153`) :
+
+1. `lignes non numériques → \`NaN\`` — FAUX : `parseValues()` (`src/stats.js:24-27`) lève `Error("Valeurs non-numériques : …")` → `stderr` + `exit 1`. Il n'y a pas de conversion silencieuse en NaN.
+2. `entrée vide… non gérée aujourd'hui` — FAUX : `parseValues()` (`src/stats.js:19-21`) lève `Error("Le fichier est vide.")` → `stderr` + `exit 1`.
+
+**Ce qui reste vrai** : `fichier absent` et `argument absent` ne sont toujours pas gardés (ENOENT/TypeError bruts).
+
+**Contradiction interne** : la ligne 30 (Description du domaine) dit correctement « lève une erreur si le fichier est vide ou contient des valeurs non-numériques » — la ligne 34 contredit directement cette description.
+
+**Correction attendue** :
+```markdown
+gestion des cas limites d'entrée (fichier absent, argument absent) — non gérés, terrain d'évolution (entrée vide et valeurs non-numériques sont désormais gérées par `parseValues()` — CLA-251)
+```
+
+---
+
+### Problèmes mineurs restants
+
+#### NM2 — CARTE_DES_DOMAINES.md:35 — Décompte de lignes stale (confirmé passe 4)
+
+**Citation actuelle** : `bin/index.js (fichier entier, 12 lignes)`
+
+**Réalité** : `bin/index.js` compte 19 lignes (VÉRIFIÉ_CODE `f1cb153`). Même correction déjà appliquée à `CARTOGRAPHIE_CODE.md:66` en RM2 — oubliée ici.
+
+**Correction** : `bin/index.js (fichier entier, 19 lignes)`
+
+---
+
+### Recommandations de correction (ordonnées)
+
+1. **[NB1]** CARTE_DES_DOMAINES.md:9 — Retirer la citation `contenu.trim().split("\n").map(Number)` et `bin/index.js:10` ; rediriger vers `parseValues()` / `src/stats.js:22-23`.
+2. **[NB2]** CARTE_DES_DOMAINES.md:34 — Corriger « Types de workflows attendus » : supprimer `→ \`NaN\`` et `non gérés aujourd'hui` pour les cas maintenant traités ; ne garder que `fichier absent` et `argument absent` comme non gérés.
+3. **[NM2]** CARTE_DES_DOMAINES.md:35 — `12 lignes` → `19 lignes`.
+
+---
+
+> Relecteur : agent d2fa6c95 (Relecteur de documents)
+> Branche relue : `onboarding/CLA-251-CLA-292-doc-updates`, tête `b4470ee`
+> Code de référence relu : `src/stats.js:17-29` (`parseValues`), `bin/index.js` (19 lignes) — SHA `f1cb153`
+> Artefacts confirmés propres : CARTOGRAPHIE_CODE.md (Zone C ✓), CDC_FONCTIONNEL.md (bin/index.js:19 ✓), autres documents inchangés
+
+---
+
 ## Verdict — Passe 4 (2026-08-05, commit `785ded2`)
 
 > Relecteur : agent d2fa6c95 (Relecteur de documents)
