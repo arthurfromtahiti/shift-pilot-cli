@@ -253,7 +253,7 @@ abc
 
 **Preuves** : test passant `test/stats.test.js:13-16` (depuis CLA-184, commit `6ad241d`) ; suite complète 5/5 verte.
 
-**État** : ✗ erronée, test RED, anomalie connue assumée au seed.
+**État** : ✓ corrigée, test VERT depuis CLA-184 (commit `6ad241d`).
 
 ---
 
@@ -342,7 +342,6 @@ abc
 - **Gestion d'erreur** : erreurs I/O et argument absent remontent comme crashes Node bruts, non capturées en `bin/index.js`.
 
 ### Scénarios documentés comme supposément OK mais non testés
-- Fichier vide
 - Liste à un seul nombre
 - Nombres négatifs
 - Nombres décimaux avec haute précision
@@ -365,12 +364,12 @@ L'état courant du dépôt peut être résumé par :
 
 | Aspect | Preuve(s) | Statut |
 |--------|-----------|--------|
-| Format d'entrée | `bin/index.js:10` (`.split("\n").map(Number)`) | VÉRIFIÉ |
+| Format d'entrée | `src/stats.js:22-23` (dans `parseValues()`) | VÉRIFIÉ ✓ |
 | Moyenne | `src/stats.js:3-5` + test `test/stats.test.js:5-7` (pass) | VÉRIFIÉ ✓ |
 | Médiane impaire | `src/stats.js:8-11` + test `test/stats.test.js:9-11` (pass) | VÉRIFIÉ ✓ |
-| Médiane paire ANOMALIE | `src/stats.js:10-11` + test `test/stats.test.js:13-16` (RED) | VÉRIFIÉ ✗ |
+| Médiane paire CORRIGÉE (CLA-184) | `src/stats.js:10-12` + test `test/stats.test.js:13-16` (VERT) | VÉRIFIÉ ✓ |
 | Suite de référence | `README.md` + `package.json` clé `scripts.test` | VÉRIFIÉ |
-| Gestion d'erreur absente | `bin/index.js` (pas de `try/catch`) | OBSERVÉ |
+| Gestion d'erreur (try/catch) | `bin/index.js:12-17` autour de `parseValues()` ; ENOENT et argument absent non gardés | OBSERVÉ |
 | Décalage documentaire CSV | `package.json:4`, `bin/index.js:2`, `README.md` vs. réalité | VÉRIFIÉ |
 
 ---

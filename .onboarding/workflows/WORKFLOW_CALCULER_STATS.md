@@ -69,8 +69,8 @@ Aucune intégration externe explicite visible. Le flux est entièrement local : 
 - **Médiane paire** : correction complète depuis CLA-184 — plus aucune anomalie à ce sujet.
 
 ## Preuves
-- `bin/index.js` — fichier entier (12 lignes), lu à cette session
-- `src/stats.js` — fichier entier (14 lignes), lu à cette session
+- `bin/index.js` — fichier entier (19 lignes), lu à cette session
+- `src/stats.js` — fichier entier (31 lignes), lu à cette session
 - `package.json` — fichier entier, lu à cette session
 - `README.md` — fichier entier, lu à cette session
 - `test/stats.test.js` — lu pour corroborer les règles métier de `mean`/`median`
