@@ -11,9 +11,9 @@ shift-pilot-cli/
 ├── bin/
 │   └── index.js                       [point d'entrée CLI, orchestration]
 ├── src/
-│   └── stats.js                       [logique métier : mean, median]
+│   └── stats.js                       [logique métier : mean, median, parseValues]
 └── test/
-    └── stats.test.js                  [suite de tests, 3 cas, 1 RED]
+    └── stats.test.js                  [suite de tests, 5 cas, 0 RED]
 ```
 
 **5 fichiers versionnés** ; ~40 lignes de code productif ; zéro dépendance externe npm.
@@ -63,7 +63,7 @@ module.exports = { mean, median, parseValues }
 **Rôle** : orchestration complète, point d'entrée, packaging, distribution.
 
 **Fichiers** :
-- `bin/index.js` (12 lignes) — point d'entrée CLI
+- `bin/index.js` (19 lignes) — point d'entrée CLI
 - `package.json` (entier) — manifeste et distribution
 - `README.md` (entier) — documentation utilisateur et spécification
 
