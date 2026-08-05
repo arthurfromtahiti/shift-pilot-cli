@@ -260,7 +260,7 @@ abc
 ### Format de sortie — Invariant
 **Règle 6** : Une seule ligne imprimée sur stdout, format fixe : `n=<nombre> moyenne=<valeur> mediane=<valeur>`.
 
-**Codification** : `bin/index.js:12` — template literal.
+**Codification** : `bin/index.js:19` — template literal.
 
 **Exemple** : `n=3 moyenne=5 mediane=5`.
 

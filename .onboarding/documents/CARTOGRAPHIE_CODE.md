@@ -279,15 +279,16 @@ const { mean, median, parseValues } = require("../src/stats");
 
 ---
 
-### Zone C — Gestion d'erreur absente (`bin/index.js:8-10`)
-**Observation** : pas de `try/catch` pour captures ENOENT (fichier absent) ou TypeError (argument absent). Pas de validation pour lignes non numériques.
+### Zone C — Gestion d'erreur partielle (`bin/index.js`, `src/stats.js`)
+**Observation** : `parseValues()` (`src/stats.js:17-28`) valide les lignes non-numériques et le fichier vide — levée d'erreur explicite. `bin/index.js:12-17` entoure l'appel à `parseValues()` d'un `try/catch` (→ `stderr` + `exit 1`). **Subsistent non gardés** : argument absent (TypeError brut) et fichier absent (ENOENT brut).
 
 **Comportement observé** :
-- Argument absent → TypeError Node brut
-- Fichier absent → ENOENT Node brut
-- Ligne non numérique → `Number()` → NaN silencieux
+- Argument absent → TypeError Node brut (non capturé)
+- Fichier absent → ENOENT Node brut (non capturé)
+- Ligne non numérique → `Error("Valeurs non-numériques : ...")` → `stderr` + `exit 1` (CLA-251)
+- Fichier vide → `Error("Le fichier est vide.")` → `stderr` + `exit 1` (CLA-251)
 
-**Preuves** : `bin/index.js:8-10` (code brut) ; résultats observables via tests manuels (cas d'erreur non testés).
+**Preuves** : `bin/index.js:12-17` (try/catch) ; `src/stats.js:17-28` (`parseValues`) ; `test/stats.test.js:18-24` (2 tests CLA-251, verts).
 
 ## Schéma d'import et dépendances
 

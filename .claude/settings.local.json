@@ -1,0 +1,39 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(/paperclip/instances/default/projects/be2f6065-a710-4a1d-8bb7-531efdbc6f23/98b69238-8403-474b-b5ae-b7d85608bd00/shift-pilot-cli/scripts/paperclip-issue-update.sh:*)",
+      "Bash(/paperclip/instances/default/projects/be2f6065-a710-4a1d-8bb7-531efdbc6f23/98b69238-8403-474b-b5ae-b7d85608bd00/shift-pilot-cli/scripts/paperclip:*)",
+      "Bash(curl:*)",
+      "Bash(env)",
+      "Bash(env:*)"
+    ],
+    "additionalDirectories": [
+      "/paperclip/instances/default/companies/be2f6065-a710-4a1d-8bb7-531efdbc6f23",
+      "/paperclip/instances/default/companies/be2f6065-a710-4a1d-8bb7-531efdbc6f23/acp-engine/agents/0053be19-efe5-4033-bcbf-59beaee0fa53",
+      "/paperclip/instances/default/companies/be2f6065-a710-4a1d-8bb7-531efdbc6f23/acp-engine/agents/10adf056-950a-4420-8fd1-8791b4f4e508",
+      "/paperclip/instances/default/companies/be2f6065-a710-4a1d-8bb7-531efdbc6f23/acp-engine/agents/40467a8d-0d9e-4401-9c79-db3a409ef3ca",
+      "/paperclip/instances/default/companies/be2f6065-a710-4a1d-8bb7-531efdbc6f23/acp-engine/agents/41d07cf3-c7e5-4581-b360-c52b59f08c82",
+      "/paperclip/instances/default/companies/be2f6065-a710-4a1d-8bb7-531efdbc6f23/acp-engine/agents/5c5239ec-7b67-406a-84b1-84ae4dadde96",
+      "/paperclip/instances/default/companies/be2f6065-a710-4a1d-8bb7-531efdbc6f23/acp-engine/agents/820e118f-58d4-43db-9f0c-4eb3f17ac4dc",
+      "/paperclip/instances/default/companies/be2f6065-a710-4a1d-8bb7-531efdbc6f23/acp-engine/agents/83135a7e-4390-4f22-b159-022cdd9263fa",
+      "/paperclip/instances/default/companies/be2f6065-a710-4a1d-8bb7-531efdbc6f23/acp-engine/agents/934b4975-c852-4297-894e-72f68603bff0",
+      "/paperclip/instances/default/companies/be2f6065-a710-4a1d-8bb7-531efdbc6f23/acp-engine/agents/d2fa6c95-c646-4d3e-b763-b5f4cd511aef",
+      "/paperclip/instances/default/companies/be2f6065-a710-4a1d-8bb7-531efdbc6f23/acp-engine/agents/d4954fae-3812-432a-8046-95cc7c9584a3",
+      "/paperclip/instances/default/companies/be2f6065-a710-4a1d-8bb7-531efdbc6f23/acp-engine/agents/da44d52f-95e7-43ab-b71b-0baf27ed81be",
+      "/paperclip/instances/default/companies/be2f6065-a710-4a1d-8bb7-531efdbc6f23/acp-engine/agents/ead52aa2-d719-4070-baac-69caa7c23b0c",
+      "/paperclip/instances/default/workspaces/0053be19-efe5-4033-bcbf-59beaee0fa53",
+      "/paperclip/instances/default/workspaces/10adf056-950a-4420-8fd1-8791b4f4e508",
+      "/paperclip/instances/default/workspaces/40467a8d-0d9e-4401-9c79-db3a409ef3ca",
+      "/paperclip/instances/default/workspaces/41d07cf3-c7e5-4581-b360-c52b59f08c82",
+      "/paperclip/instances/default/workspaces/5c5239ec-7b67-406a-84b1-84ae4dadde96",
+      "/paperclip/instances/default/workspaces/820e118f-58d4-43db-9f0c-4eb3f17ac4dc",
+      "/paperclip/instances/default/workspaces/83135a7e-4390-4f22-b159-022cdd9263fa",
+      "/paperclip/instances/default/workspaces/934b4975-c852-4297-894e-72f68603bff0",
+      "/paperclip/instances/default/workspaces/d2fa6c95-c646-4d3e-b763-b5f4cd511aef",
+      "/paperclip/instances/default/workspaces/d4954fae-3812-432a-8046-95cc7c9584a3",
+      "/paperclip/instances/default/workspaces/da44d52f-95e7-43ab-b71b-0baf27ed81be",
+      "/paperclip/instances/default/workspaces/ead52aa2-d719-4070-baac-69caa7c23b0c"
+    ],
+    "defaultMode": "default"
+  }
+}
