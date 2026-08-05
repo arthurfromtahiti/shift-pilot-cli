@@ -23,6 +23,10 @@ test("parseValues — valeur non-numérique → erreur mentionnant la valeur inv
   assert.throws(() => parseValues("1\nabc\n3"), /abc/);
 });
 
+test("mean — liste vide → erreur compréhensible, pas de NaN (SHIAAAAAAAAAAAAAAAAAAAAAAAA-243)", () => {
+  assert.throws(() => mean([]), /aucune valeur/i);
+});
+
 test("parseValues — ligne vide ignorée, médiane calculée sans le zéro parasite", () => {
   // "10\n\n20\n30" → Number("") vaut 0 → sans filtre, valeurs = [10, 0, 20, 30], médiane = 15
   // Avec filtre lignes vides, valeurs = [10, 20, 30], médiane = 20

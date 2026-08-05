@@ -26,4 +26,11 @@ try {
   process.exit(1);
 }
 
-console.log(`n=${valeurs.length} moyenne=${mean(valeurs)} mediane=${median(valeurs)}`);
+let sortie;
+try {
+  sortie = `n=${valeurs.length} moyenne=${mean(valeurs)} mediane=${median(valeurs)}`;
+} catch (err) {
+  process.stderr.write(err.message + "\n");
+  process.exit(1);
+}
+console.log(sortie);
