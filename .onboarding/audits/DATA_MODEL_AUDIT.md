@@ -29,7 +29,7 @@ Il n'y a rien à auditer au sens classique du terme (tables, relations, contrain
 
 ## Dettes techniques
 
-- Le type du tableau `valeurs` n'est pas validé : il peut contenir `NaN` ou des `0` silencieux sans que le code de calcul le signale (`bin/index.js:10`, `src/stats.js`). Ce n'est pas un problème de modèle de données au sens strict, mais c'est le seul endroit où une contrainte d'intégrité aurait du sens.
+- Le type du tableau `valeurs` n'est pas validé : il peut contenir `NaN` (via `Number("chaîne invalide")`) ou des `0` silencieux (lignes vides, maintenant filtrées dans `parseValues()` à partir de SHA `38a7ba5`). Le code de calcul (`mean()`, `median()`) n'enrobage pas ces cas limites, mais `parseValues()` les intercepte partiellement : fichier vide et valeurs non-numériques lèvent, lignes vides sont filtrées. NaN d'entrée reste non géré.
 - La description « CSV » (`package.json:4`, `bin/index.js:2`, `README.md`) est inexacte par rapport au parsing réel. Ce décalage terminologique peut induire en erreur un utilisateur qui tenterait de passer un vrai fichier CSV multi-colonnes.
 
 ## Zones critiques
@@ -38,7 +38,8 @@ Il n'existe pas de zone critique au sens du modèle de données. Le seul point d
 
 ## Risques
 
-- **Terminologie « CSV » inexacte** : un utilisateur qui passe un fichier CSV standard (séparateur `,`, éventuellement plusieurs colonnes) obtiendra des `NaN` silencieux dans les calculs. Impact : faible (outil interne), mais source de confusion. Preuve : `bin/index.js:10` (`.split("\n")` sans gestion du `,`), `package.json:4`.
+- **Terminologie « CSV » inexacte** : un utilisateur qui passe un fichier CSV standard (séparateur `,`, éventuellement plusieurs colonnes) obtiendra des `NaN` silencieux, filtrés par `parseValues()` qui demandera une erreur. Impact : faible (outil interne), mais source de confusion. Preuve : `bin/index.js:10` (`.split("\n")` sans gestion du `,`), `package.json:4`.
+- **NaN propagé en entrée** : si `Number()` convertit une chaîne en `NaN` (cas limite non tracé), le NaN se propage dans les calculs. La validation de `parseValues()` (non-numériques) intercepte les chaînes explicitement invalides, mais pas les `NaN` qui résulteraient d'une entrée numérique malformée après parsing.
 
 ## Recommandations priorisées
 
