@@ -22,3 +22,11 @@ test("parseValues — fichier vide → erreur", () => {
 test("parseValues — valeur non-numérique → erreur mentionnant la valeur invalide", () => {
   assert.throws(() => parseValues("1\nabc\n3"), /abc/);
 });
+
+test("parseValues — ligne vide ignorée, médiane calculée sans le zéro parasite", () => {
+  // "10\n\n20\n30" → Number("") vaut 0 → sans filtre, valeurs = [10, 0, 20, 30], médiane = 15
+  // Avec filtre lignes vides, valeurs = [10, 20, 30], médiane = 20
+  const values = parseValues("10\n\n20\n30");
+  assert.deepEqual(values, [10, 20, 30]);
+  assert.equal(median(values), 20);
+});
