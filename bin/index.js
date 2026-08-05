@@ -10,7 +10,13 @@ if (!chemin) {
   process.stderr.write("Usage : pilot-stats <fichier.csv>\n");
   process.exit(1);
 }
-const contenu = fs.readFileSync(chemin, "utf8");
+let contenu;
+try {
+  contenu = fs.readFileSync(chemin, "utf8");
+} catch (err) {
+  process.stderr.write(`Erreur : fichier introuvable "${chemin}"\n`);
+  process.exit(1);
+}
 
 let valeurs;
 try {
