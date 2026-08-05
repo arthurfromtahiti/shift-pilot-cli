@@ -11,6 +11,13 @@ test("pilot-stats sans argument → usage sur stderr + exit 1", () => {
   assert.match(result.stderr.toString(), /Usage/i);
 });
 
+test("pilot-stats sans argument → message usage sans extension .csv (SHIAAAAAAAAAAAAAAAAAAAAAAAA-71)", () => {
+  const result = spawnSync("node", ["bin/index.js"], {
+    cwd: path.join(__dirname, ".."),
+  });
+  assert.doesNotMatch(result.stderr.toString(), /\.csv/);
+});
+
 test("pilot-stats fichier inexistant → message clair sur stderr + exit 1", () => {
   const result = spawnSync("node", ["bin/index.js", "/tmp/fichier-inexistant-xyz.csv"], {
     cwd: path.join(__dirname, ".."),
