@@ -6,7 +6,7 @@
 
 ## Nature du projet
 
-Outil **CLI mono-usage** (`type: commonjs`, Node ≥ 18), présenté par son propre `package.json` comme un **« Pilote de test SHIFT/Paperclip »**. Sa description évoque un **CSV à une colonne de nombres**, mais l'ingestion réelle est plus étroite : le binaire lit un fichier passé en argument et le découpe **ligne par ligne** (`contenu.trim().split("\n").map(Number)`, `bin/index.js:10`) — pas de séparateur, pas de guillemets, pas de multi-colonnes ; « CSV » est ici, dans les faits, **un nombre par ligne**. Il en calcule la **moyenne** et la **médiane**, puis les imprime sur la sortie standard. Ce n'est ni une application web, ni une API, ni un SaaS : **aucune entité persistée, aucune route, aucune base de données, aucune authentification**. Le `README` en fait explicitement un banc d'essai : *« La suite de tests fait référence : tout écart entre le comportement et les tests est une anomalie. »* La valeur du dépôt tient donc autant à son **comportement de calcul** qu'à sa **suite de tests de référence**.
+Outil **CLI mono-usage** (`type: commonjs`, Node ≥ 18), présenté par son propre `package.json` comme un **« Pilote de test SHIFT/Paperclip »**. Sa description évoque un **CSV à une colonne de nombres**, mais l'ingestion réelle est plus étroite : le binaire lit un fichier passé en argument et le découpe **ligne par ligne** via `parseValues()` (`src/stats.js:22-23` — CLA-251) — pas de séparateur, pas de guillemets, pas de multi-colonnes ; « CSV » est ici, dans les faits, **un nombre par ligne**. Il en calcule la **moyenne** et la **médiane**, puis les imprime sur la sortie standard. Ce n'est ni une application web, ni une API, ni un SaaS : **aucune entité persistée, aucune route, aucune base de données, aucune authentification**. Le `README` en fait explicitement un banc d'essai : *« La suite de tests fait référence : tout écart entre le comportement et les tests est une anomalie. »* La valeur du dépôt tient donc autant à son **comportement de calcul** qu'à sa **suite de tests de référence**.
 
 ## Domaines
 
@@ -31,8 +31,8 @@ Outil **CLI mono-usage** (`type: commonjs`, Node ≥ 18), présenté par son pro
 - **Entités** : aucune.
 - **Routes / points d'entrée** : le binaire lui-même — shebang `#!/usr/bin/env node` (`bin/index.js:1`), exposé sous le nom `pilot-stats` via la clé `bin` de `package.json`. Invocation documentée : `node bin/index.js data.csv` (`README.md`).
 - **Indices de rattachement** : `bin/index.js`, `process.argv`, `fs.readFileSync`, `split("\n")`, `map(Number)`, `console.log` ; `package.json` — clés `bin`, `engines`, `type`, `scripts`, symbole `pilot-stats`.
-- **Types de workflows attendus** : « passer un fichier (un nombre par ligne) et obtenir n / moyenne / médiane » ; installation/liaison du binaire et contrainte de version Node ; gestion des cas limites d'entrée (fichier absent, entrée vide, lignes non numériques → `NaN`) — non gérés aujourd'hui, terrain probable d'évolution ; publication npm si le statut `private` change un jour.
-- **Preuves** : `bin/index.js` (fichier entier, 12 lignes) ; `package.json` (fichier entier — clés `bin`, `engines`, `type`, `scripts`) ; `README.md` (section « Usage »).
+- **Types de workflows attendus** : « passer un fichier (un nombre par ligne) et obtenir n / moyenne / médiane » ; installation/liaison du binaire et contrainte de version Node ; gestion des cas limites d'entrée (fichier absent, argument absent) — non gérés, terrain d'évolution (entrée vide et valeurs non-numériques sont désormais gérées par `parseValues()` — CLA-251) ; publication npm si le statut `private` change un jour.
+- **Preuves** : `bin/index.js` (fichier entier, 19 lignes) ; `package.json` (fichier entier — clés `bin`, `engines`, `type`, `scripts`) ; `README.md` (section « Usage »).
 - **Dépend de la base** : non.
 
 ### Suite de tests de référence (`suite-tests`)
