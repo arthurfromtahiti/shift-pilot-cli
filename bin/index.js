@@ -6,6 +6,10 @@ const fs = require("node:fs");
 const { mean, median, parseValues } = require("../src/stats");
 
 const chemin = process.argv[2];
+if (!chemin) {
+  process.stderr.write("Usage : pilot-stats <fichier.csv>\n");
+  process.exit(1);
+}
 const contenu = fs.readFileSync(chemin, "utf8");
 
 let valeurs;
