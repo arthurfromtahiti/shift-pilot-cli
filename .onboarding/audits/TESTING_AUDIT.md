@@ -29,6 +29,8 @@ Il n'y a pas de configuration CI visible dans les fichiers versionnés — aucun
 
 **Cas limites couverts.** Recherche dans `test/stats.test.js` : cas limites trouvés et testés. `mean([])` → `throw Error("Aucune valeur numérique à analyser dans ce fichier.")` (test 6, validé SHA `38a7ba5`). `parseValues("")` → throw (test 4). `parseValues("valeur invalide")` → throw (test 5). `median([])` reste non couvert mais `mean([])` l'est désormais — voir Zones critiques pour `median([])`. Comportement sur NaN d'entrée : `mean([NaN, 2])` non couvert (infection NaN dans le `reduce`).
 
+**Cas limites `Infinity`/`-Infinity` couverts depuis SHA `dcdbf44` (`VÉRIFIÉ_CODE`, SHIAAAAAAAAAAAAAAAAAAAAAAAA-295).** `parseValues("Infinity")` et `parseValues("-Infinity")` lèvent désormais une erreur `"Valeurs non-numériques : Infinity"` / `"Valeurs non-numériques : -Infinity"` — la correction de `Number.isNaN` → `!Number.isFinite` dans `src/stats.js:26` est couverte par 2 nouveaux tests (`test/stats.test.js` : `parseValues — Infinity → erreur mentionnant Infinity` et `parseValues — -Infinity → erreur mentionnant -Infinity`).
+
 **Absence de CI.** Recherche sur `.github/`, `workflows/`, `.travis.yml`, `Jenkinsfile`, `CircleCI`, `Makefile` dans les fichiers versionnés — non localisé. `git ls-files` ne retourne que 5 fichiers. `HYPOTHÈSE` : aucune exécution automatique de la suite n'est configurée sur ce dépôt.
 
 **Aucun outil de couverture.** Recherche sur `c8`, `nyc`, `istanbul`, `--experimental-test-coverage` dans `package.json` — non localisé. La couverture de code n'est pas mesurée.
