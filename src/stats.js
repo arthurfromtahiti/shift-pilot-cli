@@ -9,6 +9,9 @@ function mean(values) {
 }
 
 function median(values) {
+  if (values.length === 0) {
+    throw new Error("Aucune valeur numérique à analyser dans ce fichier.");
+  }
   const sorted = [...values].sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
   if (sorted.length % 2 === 0) {
