@@ -29,7 +29,7 @@ Il n'y a rien à auditer au sens classique du terme (tables, relations, contrain
 
 ## Dettes techniques
 
-- Le type du tableau `valeurs` n'est pas validé : il peut contenir `NaN` (via `Number("chaîne invalide")`) ou des `0` silencieux (lignes vides, maintenant filtrées dans `parseValues()` à partir de SHA `38a7ba5`). Le code de calcul (`mean()`, `median()`) n'enrobage pas ces cas limites, mais `parseValues()` les intercepte partiellement : fichier vide et valeurs non-numériques lèvent, lignes vides sont filtrées. NaN d'entrée reste non géré.
+- Le type du tableau `valeurs` n'est pas validé en amont de `parseValues()` : il peut contenir `NaN` sans que le code de calcul le signale. `parseValues()` rejette les chaînes non-numériques, les lignes vides et, depuis SHA `dcdbf44` (SHIAAAAAAAAAAAAAAAAAAAAA-295), `"Infinity"` et `"-Infinity"` via `!Number.isFinite(Number(l))` (`src/stats.js:26`). Le NaN produit par d'autres vecteurs (ex. `Number("…")` dans `bin/index.js`) reste non géré.
 - La description « CSV » (`package.json:4`, `bin/index.js:2`, `README.md`) est inexacte par rapport au parsing réel. Ce décalage terminologique peut induire en erreur un utilisateur qui tenterait de passer un vrai fichier CSV multi-colonnes.
 
 ## Zones critiques
