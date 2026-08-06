@@ -56,3 +56,7 @@ test('parseValues — valeurs entre guillemets doubles (export CSV Excel) → no
 test('parseValues — guillemets englobants + valeur non-numérique → erreur avec la valeur brute sans guillemets (SHIAAAAAAAAAAAAAAAAAAAAAAAA-398)', () => {
   assert.throws(() => parseValues('"10"\n"abc"\n"30"'), /abc/);
 });
+
+test('parseValues — cellule vide entre guillemets ("" export Excel) → erreur (SHIAAAAAAAAAAAAAAAAAAAAAAAA-405)', () => {
+  assert.throws(() => parseValues('5\n""\n10'), /non.num/i);
+});
