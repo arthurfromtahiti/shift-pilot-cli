@@ -27,3 +27,13 @@ test("pilot-stats fichier inexistant → message clair sur stderr + exit 1", () 
   assert.match(stderr, /introuvable|fichier|ENOENT/i);
   assert.doesNotMatch(stderr, /at Object\.<anonymous>/);
 });
+
+test("pilot-stats chemin vers un dossier → exit 1 + stderr non-ENOENT (EISDIR)", () => {
+  const result = spawnSync("node", ["bin/index.js", "/tmp"], {
+    cwd: path.join(__dirname, ".."),
+  });
+  assert.equal(result.status, 1);
+  const stderr = result.stderr.toString();
+  assert.doesNotMatch(stderr, /introuvable/i);
+  assert.ok(stderr.trim().length > 0, "stderr doit être non vide");
+});
