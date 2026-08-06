@@ -27,6 +27,14 @@ test("mean — liste vide → erreur compréhensible, pas de NaN (SHIAAAAAAAAAAA
   assert.throws(() => mean([]), /aucune valeur/i);
 });
 
+test("parseValues — Infinity → erreur mentionnant Infinity (SHIAAAAAAAAAAAAAAAAAAAAAAAA-295)", () => {
+  assert.throws(() => parseValues("Infinity"), /Infinity/);
+});
+
+test("parseValues — -Infinity → erreur mentionnant -Infinity (SHIAAAAAAAAAAAAAAAAAAAAAAAA-295)", () => {
+  assert.throws(() => parseValues("-Infinity"), /-Infinity/);
+});
+
 test("parseValues — ligne vide ignorée, médiane calculée sans le zéro parasite", () => {
   // "10\n\n20\n30" → Number("") vaut 0 → sans filtre, valeurs = [10, 0, 20, 30], médiane = 15
   // Avec filtre lignes vides, valeurs = [10, 20, 30], médiane = 20

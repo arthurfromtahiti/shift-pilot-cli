@@ -23,7 +23,7 @@ function parseValues(content) {
     throw new Error("Le fichier est vide.");
   }
   const lines = trimmed.split("\n").filter(l => l.trim() !== "");
-  const invalides = lines.filter(l => Number.isNaN(Number(l)));
+  const invalides = lines.filter(l => !Number.isFinite(Number(l)));
   if (invalides.length > 0) {
     throw new Error(`Valeurs non-numériques : ${invalides.join(", ")}`);
   }
