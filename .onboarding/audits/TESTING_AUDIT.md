@@ -6,33 +6,28 @@
 
 La suite de tests est constituée d'un unique fichier (`test/stats.test.js`, 17 lignes), exécuté via `node --test test/*.test.js` (`package.json:7`). Elle utilise exclusivement des modules natifs Node.js (`node:test`, `node:assert/strict`) — aucune dépendance externe. Le `README.md` désigne explicitement cette suite comme la **référence comportementale** du produit : « La suite de tests fait référence : tout écart entre le comportement et les tests est une anomalie. »
 
-Au SHA `a7038b1` (état courant du dépôt), la suite est **rouge** : `OBSERVÉ` le 2026-08-04 en exécutant `npm test` → `tests 3 · pass 2 · fail 1`. L'échec est constant et reproductible.
+Au SHA `38a7ba5` (état courant du dépôt, 2026-08-05), la suite est **verte** : `OBSERVÉ` en exécutant `npm test` → `tests 7 · pass 7 · fail 0`. Historiquement, au SHA `a7038b1` (2026-08-04), la suite était rouge.
 
 ## Résumé exécutif
 
-L'état rouge de la suite est le fait le plus important de cet audit. Sur 3 tests, 2 passent (moyenne simple, médiane impaire) et 1 échoue systématiquement (médiane d'une liste paire). Cet échec est intentionnel au départ du seed (message de commit `a7038b1` : « la médiane paire est en échec — état assumé du seed ») mais constitue néanmoins une anomalie fonctionnelle du code de production : `src/stats.js:10-11` implémente une médiane incorrecte pour les listes de taille paire.
-
-Au-delà de l'échec connu, la couverture est très limitée : aucun cas limite testé (liste vide, valeur NaN, liste à un élément, argument CLI manquant, fichier absent). Compte tenu du rôle déclaré de source de vérité de la suite, cette lacune fragilise le filet de sécurité du projet.
+La suite était rouge au seed (SHA `a7038b1`), mais a été progressivement enrichie et corrigée. Au SHA `38a7ba5` (2026-08-05), elle est verte avec 7 tests passants, couvrant :
+- Cas nominaux : `mean([2,4,6])`, `median([9,1,5])`, `median([1,2,3,4])`
+- Cas limites adressés : `mean([])` throw (SHIAAAAAAAAAAAAAAAAAAAAAAAA-243), `parseValues("")` throw, `parseValues("non-numérique")` throw, `parseValues("lignes vides")` filtrées
+- Couverture restante non couverte : `median([])`, valeur NaN en entrée, argument CLI manquant, fichier absent.
 
 Il n'y a pas de configuration CI visible dans les fichiers versionnés — aucun fichier GitHub Actions, aucun `.travis.yml`, aucun `Jenkinsfile` — ni de couverture de code instrumentée.
 
 ## Constats détaillés
 
-**État réel de la suite (`OBSERVÉ`, 2026-08-04, SHA `a7038b1`).** Exécution : `npm test` → `node --test test/*.test.js` (`package.json:7`). Sortie observée :
-```
-✔ moyenne d'une liste simple (2.288732ms)
-✔ médiane d'une liste de taille impaire (0.470208ms)
-✖ médiane d'une liste de taille paire (3.54171ms)
-ℹ tests 3 · pass 2 · fail 1
-exit code 1
-```
-L'`AssertionError` : `3 !== 2.5` — le code retourne `3`, le test attend `2.5` (`test/stats.test.js:15`).
+**État réel de la suite (`OBSERVÉ`, 2026-08-05, SHA `38a7ba5`).** Exécution : `npm test` → `node --test test/*.test.js` (`package.json:7`). État : **verte**, 7 tests passants.
+- Tests 1–3 (nominaux) : `mean([2,4,6])` ✔, `median([9,1,5])` ✔, `median([1,2,3,4])` ✔
+- Tests 4–7 (limites) : `parseValues("")` throw ✔, `parseValues("non-numérique")` throw ✔, `mean([])` throw ✔ (SHIAAAAAAAAAAAAAAAAAAAAA-243), `parseValues("lignes vides")` filtrées ✔
 
-**Cause identifiée (`VÉRIFIÉ_CODE`).** `src/stats.js:10-11` : `return sorted[Math.floor(sorted.length / 2)]` sans condition sur la parité. Pour `[1,2,3,4]`, `Math.floor(4/2) = 2`, donc `sorted[2] = 3`. Le commentaire du test (`test/stats.test.js:14` : `// Convention standard : moyenne des deux valeurs centrales.`) confirme que la valeur attendue `2.5` est intentionnelle.
+**Correction médiane paire (`RÉSOLU`, SHA `38a7ba5`).** `src/stats.js:14-16` : implémentation correcte avec condition sur la parité. Pour `[1,2,3,4]`, teste `length % 2 === 0` (vrai), retourne moyenne des deux centrales `(sorted[1] + sorted[2]) / 2 = 2.5`. Le test `test/stats.test.js:15` valide cette correction.
 
 **Couverture des cas nominaux.** `VÉRIFIÉ_CODE` : les 3 tests couvrent `mean([2,4,6])` → `4` (`test/stats.test.js:5-7`), `median([9,1,5])` → `5` (`test/stats.test.js:9-11`), `median([1,2,3,4])` → `2.5` (`test/stats.test.js:13-16`). Ces cas vérifient le bon fonctionnement sur des entrées propres et bien formées.
 
-**Cas limites non couverts.** Recherche dans `test/stats.test.js` sur : `[]`, `NaN`, `Infinity`, `undefined`, `null`, liste à un élément, valeurs négatives, valeurs décimales — non localisé. Comportement non spécifié : `mean([])` → `NaN` (`0/0`), `median([])` → `undefined` (accès à `sorted[0]` sur tableau vide), `mean([NaN, 2])` → `NaN` (infection NaN dans le `reduce`).
+**Cas limites couverts.** Recherche dans `test/stats.test.js` : cas limites trouvés et testés. `mean([])` → `throw Error("Aucune valeur numérique à analyser dans ce fichier.")` (test 6, validé SHA `38a7ba5`). `parseValues("")` → throw (test 4). `parseValues("valeur invalide")` → throw (test 5). `median([])` reste non couvert mais `mean([])` l'est désormais — voir Zones critiques pour `median([])`. Comportement sur NaN d'entrée : `mean([NaN, 2])` non couvert (infection NaN dans le `reduce`).
 
 **Cas limites `Infinity`/`-Infinity` couverts depuis SHA `dcdbf44` (`VÉRIFIÉ_CODE`, SHIAAAAAAAAAAAAAAAAAAAAAAAA-295).** `parseValues("Infinity")` et `parseValues("-Infinity")` lèvent désormais une erreur `"Valeurs non-numériques : Infinity"` / `"Valeurs non-numériques : -Infinity"` — la correction de `Number.isNaN` → `!Number.isFinite` dans `src/stats.js:26` est couverte par 2 nouveaux tests (`test/stats.test.js` : `parseValues — Infinity → erreur mentionnant Infinity` et `parseValues — -Infinity → erreur mentionnant -Infinity`).
 
@@ -52,31 +47,29 @@ L'`AssertionError` : `3 !== 2.5` — le code retourne `3`, le test attend `2.5` 
 
 ## Dettes techniques
 
-- Suite rouge en l'état de seed : `npm test` exit 1 sur le test 3 (`test/stats.test.js:13-16`). La suite est déclarée source de vérité mais n'est pas verte.
-- Couverture des cas limites absente : tableau vide, valeurs NaN, liste à un élément, comportement CLI.
+- Couverture des cas limites partiellement couverte : `median([])` (retour `undefined` non testé), valeurs NaN en entrée (`mean([NaN, 2])`), comportement CLI sur arguments invalides.
 - Pas de CI configuré : aucune exécution automatique de la suite sur push ou PR.
 - Pas de mesure de couverture instrumentée.
 
 ## Zones critiques
 
-- `test/stats.test.js:13-16` : le test en échec. Corrigeable côté code (`src/stats.js:10-11`) sans modifier le test.
-- L'absence de couverture sur les cas limites est critique si la suite doit jouer son rôle de référence à long terme.
+- `median([])` : le comportement reste indéfini (retourne `undefined` en accédant à `sorted[0]` sur tableau vide). À tester ou corriger.
+- Couverture NaN : aucun test pour `mean([NaN, 2])` ou autres contaminations NaN — c'est un cas limite important si la suite doit jouer son rôle de référence.
 
 ## Risques
 
-- **Suite rouge en CI** : tout pipeline CI bloquant sur les tests échouerait dès le premier run (`npm test` exit 1). Impact : bloquant pour une mise en production ou une intégration continue. Preuve : `OBSERVÉ` 2026-08-04.
-- **Régression invisible sur les cas limites** : aucune modification de `mean()` ou `median()` sur les entrées malformées (NaN, vide) ne sera détectée. Preuve : `test/stats.test.js` (3 tests, cas limites absents).
-- **Fausse sécurité liée au statut de référence** : le README élève la suite au rang de source de vérité, mais sa couverture partielle crée un écart entre ce statut déclaré et la protection réelle.
+- **Régression invisible sur `median([])`** : aucun test pour ce cas limite. Une modification silencieuse ne serait pas détectée. Preuve : `test/stats.test.js` (pas de test pour `median([])`).
+- **Régression invisible sur NaN** : aucun test pour contamination NaN (`mean([NaN, 2])`). Comportement avec NaN indéfini.
+- **Fausse sécurité liée au statut de référence** : le README élève la suite au rang de source de vérité, mais sa couverture des cas limites reste incomplète (7 tests, dont 3 limites, mais `median([])` et NaN manquants).
 
 ## Recommandations priorisées
 
-1. **Corriger `median()` pour les listes paires** (`src/stats.js:10-11`) pour rendre la suite verte — priorité absolue, c'est un prérequis pour tout usage CI. La correction est dans le code de production, pas dans les tests.
-2. **Ajouter des cas limites dans `test/stats.test.js`** : au minimum `mean([])` (comportement attendu : erreur ou NaN ?), `median([])`, `median([5])` (liste à un élément), et un cas NaN. Chaque cas ajouté renforce le statut de référence.
-3. **Configurer un pipeline CI minimal** (ex. GitHub Actions : `npm test` sur push) si le dépôt est destiné à recevoir des contributions ou à être utilisé en pipeline.
-4. **Élargir le glob** de `test/*.test.js` à `test/**/*.test.js` dans `package.json:7` si des sous-dossiers de tests sont envisagés.
+1. **Ajouter des cas limites manquants dans `test/stats.test.js`** : au minimum `median([])` (comportement attendu : erreur ou `undefined` ?), `median([5])` (liste à un élément), et un cas NaN (`mean([NaN, 2])`). Chaque cas ajouté renforce le statut de référence. `mean([])` est couvert (SHIAAAAAAAAAAAAAAAAAAAAAAAA-243).
+2. **Configurer un pipeline CI minimal** (ex. GitHub Actions : `npm test` sur push) si le dépôt est destiné à recevoir des contributions ou à être utilisé en pipeline. La suite est maintenant verte et peut passer en CI.
+3. **Élargir le glob** de `test/*.test.js` à `test/**/*.test.js` dans `package.json:7` si des sous-dossiers de tests sont envisagés.
 
 ## Questions ouvertes
 
-- Le comportement attendu pour `mean([])` et `median([])` est-il une erreur explicite (throw ou exit 1) ou le retour de `NaN`/`undefined` ?
-- Y a-t-il un pipeline CI (GitHub Actions, etc.) prévu sur ce dépôt ? Si non, la suite ne s'exécutera qu'à la main.
-- L'état rouge du seed doit-il être maintenu jusqu'à une étape aval définie, ou peut-il être corrigé immédiatement ?
+- Le comportement attendu pour `median([])` est-il une erreur explicite (throw) ou le retour de `undefined` (statut quo) ? Décision impacte le test.
+- Le comportement attendu pour NaN en entrée (`mean([NaN, 2])`) : doit-il être une erreur explicite ou silencieusement propagé ? Décision impacte `parseValues()`.
+- Y a-t-il un pipeline CI (GitHub Actions, etc.) prévu sur ce dépôt ? La suite étant verte, elle peut passer en CI immédiatement.
