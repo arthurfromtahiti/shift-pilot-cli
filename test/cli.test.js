@@ -35,5 +35,5 @@ test("pilot-stats chemin vers un dossier → exit 1 + stderr non-ENOENT (EISDIR)
   assert.equal(result.status, 1);
   const stderr = result.stderr.toString();
   assert.doesNotMatch(stderr, /introuvable/i);
-  assert.ok(stderr.trim().length > 0, "stderr doit être non vide");
+  assert.match(stderr, /EISDIR|illegal operation/i);
 });
