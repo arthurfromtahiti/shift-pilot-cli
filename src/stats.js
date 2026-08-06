@@ -20,17 +20,25 @@ function median(values) {
   return sorted[mid];
 }
 
+function stripSurroundingQuotes(s) {
+  if (s.length >= 2 && s.startsWith('"') && s.endsWith('"')) {
+    return s.slice(1, -1);
+  }
+  return s;
+}
+
 function parseValues(content) {
   const trimmed = content.trim();
   if (trimmed === "") {
     throw new Error("Le fichier est vide.");
   }
   const lines = trimmed.split("\n").filter(l => l.trim() !== "");
-  const invalides = lines.filter(l => !Number.isFinite(Number(l)));
+  const stripped = lines.map(l => stripSurroundingQuotes(l.trim()));
+  const invalides = stripped.filter(l => !Number.isFinite(Number(l)));
   if (invalides.length > 0) {
     throw new Error(`Valeurs non-numériques : ${invalides.join(", ")}`);
   }
-  return lines.map(Number);
+  return stripped.map(Number);
 }
 
 module.exports = { mean, median, parseValues };
