@@ -4,24 +4,26 @@
 
 ## Compréhension globale
 
-La suite de tests est constituée d'un unique fichier (`test/stats.test.js`, 17 lignes), exécuté via `node --test test/*.test.js` (`package.json:7`). Elle utilise exclusivement des modules natifs Node.js (`node:test`, `node:assert/strict`) — aucune dépendance externe. Le `README.md` désigne explicitement cette suite comme la **référence comportementale** du produit : « La suite de tests fait référence : tout écart entre le comportement et les tests est une anomalie. »
+La suite de tests est constituée de deux fichiers (`test/stats.test.js`, 44 lignes, 9 tests ; `test/cli.test.js`, 29 lignes, 3 tests), exécutés via `node --test test/*.test.js` (`package.json:7`). Elle utilise exclusivement des modules natifs Node.js (`node:test`, `node:assert/strict`) — aucune dépendance externe. Le `README.md` désigne explicitement cette suite comme la **référence comportementale** du produit : « La suite de tests fait référence : tout écart entre le comportement et les tests est une anomalie. »
 
-Au SHA `38a7ba5` (état courant du dépôt, 2026-08-05), la suite est **verte** : `OBSERVÉ` en exécutant `npm test` → `tests 7 · pass 7 · fail 0`. Historiquement, au SHA `a7038b1` (2026-08-04), la suite était rouge.
+Au SHA `65a5b1c` (état courant du dépôt, 2026-08-06), la suite est **verte** : `OBSERVÉ` en exécutant `npm test` → `tests 12 · pass 12 · fail 0`. Historiquement, au SHA `a7038b1` (2026-08-04), la suite était rouge.
 
 ## Résumé exécutif
 
-La suite était rouge au seed (SHA `a7038b1`), mais a été progressivement enrichie et corrigée. Au SHA `38a7ba5` (2026-08-05), elle est verte avec 7 tests passants, couvrant :
-- Cas nominaux : `mean([2,4,6])`, `median([9,1,5])`, `median([1,2,3,4])`
-- Cas limites adressés : `mean([])` throw (SHIAAAAAAAAAAAAAAAAAAAAAAAA-243), `parseValues("")` throw, `parseValues("non-numérique")` throw, `parseValues("lignes vides")` filtrées
-- Couverture restante non couverte : `median([])`, valeur NaN en entrée, argument CLI manquant, fichier absent.
+La suite était rouge au seed (SHA `a7038b1`), mais a été progressivement enrichie et corrigée. Au SHA `65a5b1c` (2026-08-06), elle est verte avec 12 tests passants, couvrant :
+- Cas nominaux stats : `mean([2,4,6])`, `median([9,1,5])`, `median([1,2,3,4])`
+- Cas limites stats adressés : `mean([])` throw (SHIAAAAAAAAAAAAAAAAAAAAA-243), `parseValues("")` throw, `parseValues("non-numérique")` throw, `parseValues("Infinity")` throw (SHIAAAAAAAAAAAAAAAAAAAAAAAA-295), `parseValues("-Infinity")` throw (SHIAAAAAAAAAAAAAAAAAAAAAAAA-295), `parseValues("lignes vides")` filtrées
+- Tests CLI : sans argument → usage + exit 1, usage sans `.csv`, fichier inexistant → message clair
+- Couverture restante non couverte : `median([])`, valeur NaN en entrée.
 
 Il n'y a pas de configuration CI visible dans les fichiers versionnés — aucun fichier GitHub Actions, aucun `.travis.yml`, aucun `Jenkinsfile` — ni de couverture de code instrumentée.
 
 ## Constats détaillés
 
-**État réel de la suite (`OBSERVÉ`, 2026-08-05, SHA `38a7ba5`).** Exécution : `npm test` → `node --test test/*.test.js` (`package.json:7`). État : **verte**, 7 tests passants.
-- Tests 1–3 (nominaux) : `mean([2,4,6])` ✔, `median([9,1,5])` ✔, `median([1,2,3,4])` ✔
-- Tests 4–7 (limites) : `parseValues("")` throw ✔, `parseValues("non-numérique")` throw ✔, `mean([])` throw ✔ (SHIAAAAAAAAAAAAAAAAAAAAA-243), `parseValues("lignes vides")` filtrées ✔
+**État réel de la suite (`OBSERVÉ`, 2026-08-06, SHA `65a5b1c`).** Exécution : `npm test` → `node --test test/*.test.js` (`package.json:7`). État : **verte**, 12 tests passants.
+- Tests 1–3 (nominaux stats) : `mean([2,4,6])` ✔, `median([9,1,5])` ✔, `median([1,2,3,4])` ✔
+- Tests 4–9 (limites stats) : `parseValues("")` throw ✔, `parseValues("non-numérique")` throw ✔, `mean([])` throw ✔ (SHIAAAAAAAAAAAAAAAAAAAAA-243), `parseValues("Infinity")` throw ✔ (SHIAAAAAAAAAAAAAAAAAAAAAAAA-295), `parseValues("-Infinity")` throw ✔ (SHIAAAAAAAAAAAAAAAAAAAAAAAA-295), `parseValues("lignes vides")` filtrées ✔
+- Tests 10–12 (CLI) : sans argument → usage + exit 1 ✔, usage sans `.csv` ✔, fichier inexistant → message clair ✔
 
 **Correction médiane paire (`RÉSOLU`, SHA `38a7ba5`).** `src/stats.js:14-16` : implémentation correcte avec condition sur la parité. Pour `[1,2,3,4]`, teste `length % 2 === 0` (vrai), retourne moyenne des deux centrales `(sorted[1] + sorted[2]) / 2 = 2.5`. Le test `test/stats.test.js:15` valide cette correction.
 
@@ -31,19 +33,20 @@ Il n'y a pas de configuration CI visible dans les fichiers versionnés — aucun
 
 **Cas limites `Infinity`/`-Infinity` couverts depuis SHA `dcdbf44` (`VÉRIFIÉ_CODE`, SHIAAAAAAAAAAAAAAAAAAAAAAAA-295).** `parseValues("Infinity")` et `parseValues("-Infinity")` lèvent désormais une erreur `"Valeurs non-numériques : Infinity"` / `"Valeurs non-numériques : -Infinity"` — la correction de `Number.isNaN` → `!Number.isFinite` dans `src/stats.js:26` est couverte par 2 nouveaux tests (`test/stats.test.js` : `parseValues — Infinity → erreur mentionnant Infinity` et `parseValues — -Infinity → erreur mentionnant -Infinity`).
 
-**Absence de CI.** Recherche sur `.github/`, `workflows/`, `.travis.yml`, `Jenkinsfile`, `CircleCI`, `Makefile` dans les fichiers versionnés — non localisé. `git ls-files` ne retourne que 5 fichiers. `HYPOTHÈSE` : aucune exécution automatique de la suite n'est configurée sur ce dépôt.
+**Absence de CI.** Recherche sur `.github/`, `workflows/`, `.travis.yml`, `Jenkinsfile`, `CircleCI`, `Makefile` dans les fichiers versionnés — non localisé. `git ls-files` retourne 37 fichiers (incluant la structure `.onboarding/`). `HYPOTHÈSE` : aucune exécution automatique de la suite n'est configurée sur ce dépôt.
 
 **Aucun outil de couverture.** Recherche sur `c8`, `nyc`, `istanbul`, `--experimental-test-coverage` dans `package.json` — non localisé. La couverture de code n'est pas mesurée.
 
 **Moteur Node ≥ 18 nécessaire.** `VÉRIFIÉ_CODE` : `node:test` et `node:assert/strict` en modules natifs n'existent pas avant Node 18 — lecture de `package.json:7` et `test/stats.test.js:1` le confirme. `OBSERVÉ` : exécution confirmée sur Node 24.18.0 (`node --version`). `HYPOTHÈSE` : sur Node < 18, la suite échouerait à l'import sans message d'erreur explicite sur la version — plausible au regard de la documentation Node, mais non vérifié dans ce run.
 
-**Glob `test/*.test.js`.** `VÉRIFIÉ_CODE` : le script npm `test` utilise le glob `test/*.test.js` (`package.json:7`). Un seul fichier correspond actuellement. Un test ajouté dans `test/unit/` ou `test/integration/` ne serait pas ramassé par ce glob.
+**Glob `test/*.test.js`.** `VÉRIFIÉ_CODE` : le script npm `test` utilise le glob `test/*.test.js` (`package.json:7`). Deux fichiers correspondent actuellement : `test/stats.test.js` et `test/cli.test.js`. Un test ajouté dans `test/unit/` ou `test/integration/` ne serait pas ramassé par ce glob.
 
 ## Forces
 
-- Modules natifs Node.js uniquement (`node:test`, `node:assert/strict`) : aucune dépendance de test externe, pas de risk de breaking change lié à une mise à jour Jest ou Mocha.
+- Modules natifs Node.js uniquement (`node:test`, `node:assert/strict`) : aucune dépendance de test externe, pas de risque de breaking change lié à une mise à jour Jest ou Mocha.
 - Assertions strictes (`node:assert/strict`) : pas de coercition de type — `assert.equal(3, 2.5)` échoue correctement (`test/stats.test.js:2`).
-- Les tests des cas nominaux sont corrects et documentent le comportement attendu de référence.
+- Les tests des cas nominaux et limites sont corrects et documentent le comportement attendu de référence.
+- Couverture CLI étendue : arguments manquants, usage, erreurs, et messages d'erreur testés.
 
 ## Dettes techniques
 
@@ -60,7 +63,7 @@ Il n'y a pas de configuration CI visible dans les fichiers versionnés — aucun
 
 - **Régression invisible sur `median([])`** : aucun test pour ce cas limite. Une modification silencieuse ne serait pas détectée. Preuve : `test/stats.test.js` (pas de test pour `median([])`).
 - **Régression invisible sur NaN** : aucun test pour contamination NaN (`mean([NaN, 2])`). Comportement avec NaN indéfini.
-- **Fausse sécurité liée au statut de référence** : le README élève la suite au rang de source de vérité, mais sa couverture des cas limites reste incomplète (7 tests, dont 3 limites, mais `median([])` et NaN manquants).
+- **Fausse sécurité liée au statut de référence** : le README élève la suite au rang de source de vérité, mais sa couverture des cas limites reste incomplète (12 tests, dont 6 limites stats + 3 CLI, mais `median([])` et NaN manquants).
 
 ## Recommandations priorisées
 
