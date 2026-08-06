@@ -46,3 +46,13 @@ test("parseValues — ligne vide ignorée, médiane calculée sans le zéro para
   assert.deepEqual(values, [10, 20, 30]);
   assert.equal(median(values), 20);
 });
+
+test('parseValues — valeurs entre guillemets doubles (export CSV Excel) → nombres corrects (SHIAAAAAAAAAAAAAAAAAAAAAAAA-398)', () => {
+  // Number('"10"') === NaN → sans dépouillage, parseValues rejette ces lignes
+  const values = parseValues('"10"\n"20"\n"30"');
+  assert.deepEqual(values, [10, 20, 30]);
+});
+
+test('parseValues — guillemets englobants + valeur non-numérique → erreur avec la valeur brute sans guillemets (SHIAAAAAAAAAAAAAAAAAAAAAAAA-398)', () => {
+  assert.throws(() => parseValues('"10"\n"abc"\n"30"'), /abc/);
+});
