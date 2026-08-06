@@ -34,7 +34,7 @@ function parseValues(content) {
   }
   const lines = trimmed.split("\n").filter(l => l.trim() !== "");
   const stripped = lines.map(l => stripSurroundingQuotes(l.trim()));
-  const invalides = stripped.filter(l => !Number.isFinite(Number(l)));
+  const invalides = stripped.filter(l => l === "" || !Number.isFinite(Number(l)));
   if (invalides.length > 0) {
     throw new Error(`Valeurs non-numériques : ${invalides.join(", ")}`);
   }
