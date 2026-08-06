@@ -14,7 +14,11 @@ let contenu;
 try {
   contenu = fs.readFileSync(chemin, "utf8");
 } catch (err) {
-  process.stderr.write(`Erreur : fichier introuvable "${chemin}"\n`);
+  if (err.code === 'ENOENT') {
+    process.stderr.write(`Erreur : fichier introuvable "${chemin}"\n`);
+  } else {
+    process.stderr.write(err.message + "\n");
+  }
   process.exit(1);
 }
 
