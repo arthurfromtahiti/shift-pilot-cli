@@ -29,7 +29,7 @@ Il n'y a rien à auditer au sens classique du terme (tables, relations, contrain
 
 ## Dettes techniques
 
-- Le type du tableau `valeurs` n'est pas validé : il peut contenir `NaN` ou des `0` silencieux sans que le code de calcul le signale (`bin/index.js:10`, `src/stats.js`). Ce n'est pas un problème de modèle de données au sens strict, mais c'est le seul endroit où une contrainte d'intégrité aurait du sens.
+- Le type du tableau `valeurs` n'est pas validé en amont de `parseValues()` : il peut contenir `NaN` sans que le code de calcul le signale. `parseValues()` rejette les chaînes non-numériques, les lignes vides et, depuis SHA `dcdbf44` (SHIAAAAAAAAAAAAAAAAAAAAA-295), `"Infinity"` et `"-Infinity"` via `!Number.isFinite(Number(l))` (`src/stats.js:26`). Le NaN produit par d'autres vecteurs (ex. `Number("…")` dans `bin/index.js`) reste non géré.
 - La description « CSV » (`package.json:4`, `bin/index.js:2`, `README.md`) est inexacte par rapport au parsing réel. Ce décalage terminologique peut induire en erreur un utilisateur qui tenterait de passer un vrai fichier CSV multi-colonnes.
 
 ## Zones critiques
