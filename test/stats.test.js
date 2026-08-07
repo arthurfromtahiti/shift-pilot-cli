@@ -60,3 +60,19 @@ test('parseValues — guillemets englobants + valeur non-numérique → erreur a
 test('parseValues — cellule vide entre guillemets ("" export Excel) → erreur (SHIAAAAAAAAAAAAAAAAAAAAAAAA-405)', () => {
   assert.throws(() => parseValues('5\n""\n10'), /non.num/i);
 });
+
+test('parseValues — notation hexadécimale → erreur mentionnant la valeur (SHIAAAAAAAAAAAAAAAAAAAAAAAA-448)', () => {
+  assert.throws(() => parseValues('5\n0x10\n15'), /0x10/);
+});
+
+test('parseValues — notation scientifique → erreur mentionnant la valeur (SHIAAAAAAAAAAAAAAAAAAAAAAAA-448)', () => {
+  assert.throws(() => parseValues('5\n1e2\n15'), /1e2/);
+});
+
+test('parseValues — notation octale préfixée → erreur mentionnant la valeur (SHIAAAAAAAAAAAAAAAAAAAAAAAA-448)', () => {
+  assert.throws(() => parseValues('5\n0o17\n15'), /0o17/);
+});
+
+test('parseValues — notation binaire préfixée → erreur mentionnant la valeur (SHIAAAAAAAAAAAAAAAAAAAAAAAA-448)', () => {
+  assert.throws(() => parseValues('5\n0b101\n15'), /0b101/);
+});
