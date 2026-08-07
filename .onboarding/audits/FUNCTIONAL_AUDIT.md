@@ -26,7 +26,7 @@ Par ailleurs, le produit souffre d'un décalage entre sa description (« CSV »)
 
 **Décalage terminologique « CSV ».** `VÉRIFIÉ_CODE` : `package.json:4` (« statistiques sur fichiers CSV »), `bin/index.js:2` (commentaire « Usage : pilot-stats <fichier.csv> »), `README.md:3` (section « Usage » avec `data.csv`). Le parsing réel ne gère qu'un nombre par ligne, séparateur `\n` exclusivement (`bin/index.js:10`). Un fichier CSV standard (`1,2,3` sur une ligne) serait parsé comme un seul élément `NaN` (ou une chaîne non numérique).
 
-**Cas limites fonctionnellement non spécifiés.** `HYPOTHÈSE` : le comportement attendu sur fichier vide, fichier à une seule valeur, fichier avec des valeurs négatives ou décimales n'est ni documenté ni testé. Le code accepte silencieusement les valeurs décimales et négatives (correctement, au sens JavaScript), mais les cas dégénérés (vide, NaN) ne sont pas spécifiés.
+**Cas limites fonctionnellement spécifiés et testés.** `VÉRIFIÉ_CODE` : depuis SHIAAAAAAAAAAAAAAAAAAAAA-448, `parseValues()` utilise une validation stricte par regex décimale `/^[+-]?\d+(\.\d+)?$/` qui rejette les notations non-décimales (hex `0x…`, octal `0o…`, binaire `0b…`, scientifique `1e2`, `Infinity`, `NaN`) avec un message d'erreur explicite. Le comportement sur fichier vide (erreur), fichier à une seule valeur (accepté), fichier avec valeurs négatives ou décimales (acceptées) est désormais testé et conforme.
 
 **Aucune fonctionnalité inachevée ou partiellement implémentée.** `VÉRIFIÉ_CODE` : le code ne contient pas de commentaires `TODO`, `FIXME`, `WIP`, ni de branche morte visible. Le projet ne prétend faire qu'une chose, et il la fait sur entrée bien formée — à l'exception de la médiane paire.
 
