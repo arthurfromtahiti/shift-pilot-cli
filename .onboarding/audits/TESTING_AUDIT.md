@@ -4,26 +4,28 @@
 
 ## Compréhension globale
 
-La suite de tests est constituée de deux fichiers (`test/stats.test.js`, 44 lignes, 9 tests ; `test/cli.test.js`, 29 lignes, 3 tests), exécutés via `node --test test/*.test.js` (`package.json:7`). Elle utilise exclusivement des modules natifs Node.js (`node:test`, `node:assert/strict`) — aucune dépendance externe. Le `README.md` désigne explicitement cette suite comme la **référence comportementale** du produit : « La suite de tests fait référence : tout écart entre le comportement et les tests est une anomalie. »
+La suite de tests est constituée de deux fichiers (`test/stats.test.js`, 78 lignes, 17 tests ; `test/cli.test.js`, 39 lignes, 4 tests), exécutés via `node --test test/*.test.js` (`package.json:7`). Elle utilise exclusivement des modules natifs Node.js (`node:test`, `node:assert/strict`) — aucune dépendance externe. Le `README.md` désigne explicitement cette suite comme la **référence comportementale** du produit : « La suite de tests fait référence : tout écart entre le comportement et les tests est une anomalie. »
 
-Au SHA `65a5b1c` (état courant du dépôt, 2026-08-06), la suite est **verte** : `OBSERVÉ` en exécutant `npm test` → `tests 12 · pass 12 · fail 0`. Historiquement, au SHA `a7038b1` (2026-08-04), la suite était rouge.
+Au SHA courant `3e66e89` (2026-08-07), la suite est **verte** : `OBSERVÉ` en exécutant `npm test` → `tests 21 · pass 21 · fail 0`. Historiquement, au SHA `a7038b1` (2026-08-04), la suite était rouge à 3 tests.
 
 ## Résumé exécutif
 
-La suite était rouge au seed (SHA `a7038b1`), mais a été progressivement enrichie et corrigée. Au SHA `65a5b1c` (2026-08-06), elle est verte avec 12 tests passants, couvrant :
+La suite était rouge au seed (SHA `a7038b1`), mais a été progressivement enrichie et corrigée. Au SHA courant `3e66e89` (2026-08-07), elle est verte avec 21 tests passants, couvrant :
 - Cas nominaux stats : `mean([2,4,6])`, `median([9,1,5])`, `median([1,2,3,4])`
-- Cas limites stats adressés : `mean([])` throw (SHIAAAAAAAAAAAAAAAAAAAAA-243), `median([])` throw (SHIAAAAAAAAAAAAAAAAAAAAA-329), `parseValues("")` throw, `parseValues("non-numérique")` throw, `parseValues("Infinity")` throw (SHIAAAAAAAAAAAAAAAAAAAAAAAA-295), `parseValues("-Infinity")` throw (SHIAAAAAAAAAAAAAAAAAAAAAAAA-295), `parseValues("lignes vides")` filtrées
-- Tests CLI : sans argument → usage + exit 1, usage sans `.csv`, fichier inexistant → message clair
+- Cas limites stats adressés : `mean([])` throw (SHIAAAAAAAAAAAAAAAAAAAAA-243), `median([])` throw (SHIAAAAAAAAAAAAAAAAAAAAA-329), `parseValues("")` throw, `parseValues("non-numérique")` throw, `parseValues("Infinity")` throw (SHIAAAAAAAAAAAAAAAAAAAAAAAA-295), `parseValues("-Infinity")` throw (SHIAAAAAAAAAAAAAAAAAAAAAAAA-295), `parseValues("guillemets")` (SHIAAAAAAAAAAAAAAAAAAAAA-398), `parseValues("cellule vide quotée")` throw (SHIAAAAAAAAAAAAAAAAAAAAA-405), `parseValues("hex/octal/binaire/scientifique")` throw (SHIAAAAAAAAAAAAAAAAAAAAA-448), `parseValues("lignes vides")` filtrées
+- Tests CLI : sans argument → usage + exit 1, usage sans `.csv`, fichier inexistant → message clair, chemin dossier → EISDIR
 - Couverture restante non couverte : valeur NaN en entrée.
 
 Il n'y a pas de configuration CI visible dans les fichiers versionnés — aucun fichier GitHub Actions, aucun `.travis.yml`, aucun `Jenkinsfile` — ni de couverture de code instrumentée.
 
 ## Constats détaillés
 
-**État réel de la suite (`OBSERVÉ`, 2026-08-06, SHA `65a5b1c`).** Exécution : `npm test` → `node --test test/*.test.js` (`package.json:7`). État : **verte**, 12 tests passants.
+**État réel de la suite (`OBSERVÉ`, 2026-08-07).** Exécution : `npm test` → `node --test test/*.test.js` (`package.json:7`). État : **verte**, 21 tests passants.
 - Tests 1–3 (nominaux stats) : `mean([2,4,6])` ✔, `median([9,1,5])` ✔, `median([1,2,3,4])` ✔
-- Tests 4–10 (limites stats) : `parseValues("")` throw ✔, `parseValues("non-numérique")` throw ✔, `mean([])` throw ✔ (SHIAAAAAAAAAAAAAAAAAAAAA-243), `parseValues("Infinity")` throw ✔ (SHIAAAAAAAAAAAAAAAAAAAAAAAA-295), `parseValues("-Infinity")` throw ✔ (SHIAAAAAAAAAAAAAAAAAAAAAAAA-295), `median([])` throw ✔ (SHIAAAAAAAAAAAAAAAAAAAAA-329), `parseValues("lignes vides")` filtrées ✔
-- Tests 11–13 (CLI) : sans argument → usage + exit 1 ✔, usage sans `.csv` ✔, fichier inexistant → message clair ✔
+- Tests 4–7 (limites stats) : `parseValues("")` throw ✔, `parseValues("non-numérique")` throw ✔, `mean([])` throw ✔ (SHIAAAAAAAAAAAAAAAAAAAAA-243), `median([])` throw ✔ (SHIAAAAAAAAAAAAAAAAAAAAA-329)
+- Tests 8–11 (Infinity et citations) : `parseValues("Infinity")` throw ✔ (SHIAAAAAAAAAAAAAAAAAAAAAAAA-295), `parseValues("-Infinity")` throw ✔ (SHIAAAAAAAAAAAAAAAAAAAAAAAA-295), `parseValues("lignes vides")` filtrées ✔, `parseValues("guillemets doubles")` ✔ (SHIAAAAAAAAAAAAAAAAAAAAA-398)
+- Tests 12–17 (Excel, cellules vides, notations non-décimales) : `parseValues("guillemets + valeur invalide")` throw ✔ (SHIAAAAAAAAAAAAAAAAAAAAA-398), `parseValues('""' cellule vide)` throw ✔ (SHIAAAAAAAAAAAAAAAAAAAAA-405), `parseValues("0xAB" hex)` throw ✔ (SHIAAAAAAAAAAAAAAAAAAAAA-448), `parseValues("1e2" scientifique)` throw ✔ (SHIAAAAAAAAAAAAAAAAAAAAA-448), `parseValues("0o12" octal)` throw ✔ (SHIAAAAAAAAAAAAAAAAAAAAA-448), `parseValues("0b101" binaire)` throw ✔ (SHIAAAAAAAAAAAAAAAAAAAAA-448)
+- Tests 18–21 (CLI) : sans argument → usage + exit 1 ✔, usage sans `.csv` ✔, fichier inexistant → message clair ✔, chemin dossier → EISDIR ✔
 
 **Correction médiane paire (`RÉSOLU`, SHA `38a7ba5`).** `src/stats.js:14-16` : implémentation correcte avec condition sur la parité. Pour `[1,2,3,4]`, teste `length % 2 === 0` (vrai), retourne moyenne des deux centrales `(sorted[1] + sorted[2]) / 2 = 2.5`. Le test `test/stats.test.js:15` valide cette correction.
 
@@ -33,7 +35,9 @@ Il n'y a pas de configuration CI visible dans les fichiers versionnés — aucun
 
 **Cas limites couverts.** Recherche dans `test/stats.test.js` : cas limites trouvés et testés. `mean([])` → `throw Error("Aucune valeur numérique à analyser dans ce fichier.")` (test 6, validé SHA `38a7ba5`, SHIAAAAAAAAAAAAAAAAAAAAA-243). `median([])` → `throw Error("Aucune valeur numérique à analyser dans ce fichier.")` (test 10, validé SHA `77da3f0`, SHIAAAAAAAAAAAAAAAAAAAAA-329). `parseValues("")` → throw (test 4). `parseValues("valeur invalide")` → throw (test 5). `parseValues("Infinity")` → throw (test 7, SHIAAAAAAAAAAAAAAAAAAAAAAAA-295). `parseValues("-Infinity")` → throw (test 8, SHIAAAAAAAAAAAAAAAAAAAAAAAA-295). Comportement sur NaN d'entrée : `mean([NaN, 2])` non couvert (infection NaN dans le `reduce`).
 
-**Cas limites `Infinity`/`-Infinity` couverts depuis SHA `dcdbf44` (`VÉRIFIÉ_CODE`, SHIAAAAAAAAAAAAAAAAAAAAAAAA-295).** `parseValues("Infinity")` et `parseValues("-Infinity")` lèvent désormais une erreur `"Valeurs non-numériques : Infinity"` / `"Valeurs non-numériques : -Infinity"` — la correction de `Number.isNaN` → `!Number.isFinite` dans `src/stats.js:26` est couverte par 2 nouveaux tests (`test/stats.test.js` : `parseValues — Infinity → erreur mentionnant Infinity` et `parseValues — -Infinity → erreur mentionnant -Infinity`).
+**Cas limites `Infinity`/`-Infinity` couverts (`VÉRIFIÉ_CODE`, SHIAAAAAAAAAAAAAAAAAAAAAAAA-295).** `parseValues("Infinity")` et `parseValues("-Infinity")` lèvent une erreur `"Valeurs non-numériques : Infinity"` / `"Valeurs non-numériques : -Infinity"` via la validation regex stricte décimale, couverte par 2 tests.
+
+**Cas limites notations non-décimales couverts (`VÉRIFIÉ_CODE`, SHIAAAAAAAAAAAAAAAAAAAAA-448).** `parseValues()` utilise depuis cette issue la regex `/^[+-]?\d+(\.\d+)?$/` qui rejette les notations hex (`0x…`), octal (`0o…`), binaire (`0b…`), et scientifique (`1e2`), tous levant `"Valeurs non-numériques : <valeur>"`. Ces 4 cas sont désormais explicitement testés et passants (`test/stats.test.js`).
 
 **Absence de CI.** Recherche sur `.github/`, `workflows/`, `.travis.yml`, `Jenkinsfile`, `CircleCI`, `Makefile` dans les fichiers versionnés — non localisé. `git ls-files` retourne 37 fichiers (incluant la structure `.onboarding/`). `HYPOTHÈSE` : aucune exécution automatique de la suite n'est configurée sur ce dépôt.
 
@@ -52,22 +56,22 @@ Il n'y a pas de configuration CI visible dans les fichiers versionnés — aucun
 
 ## Dettes techniques
 
-- Couverture des cas limites partiellement couverte : valeurs NaN en entrée (`mean([NaN, 2])`)
+- Couverture des cas limites : valeurs NaN en entrée (`mean([NaN, 2])`) reste non couverte malgré l'amélioration générale (de 12 à 21 tests)
 - Pas de CI configuré : aucune exécution automatique de la suite sur push ou PR.
 - Pas de mesure de couverture instrumentée.
 
 ## Zones critiques
 
-- Couverture NaN : aucun test pour `mean([NaN, 2])` ou autres contaminations NaN — c'est un cas limite important si la suite doit jouer son rôle de référence.
+- Couverture NaN : aucun test pour `mean([NaN, 2])` ou autres contaminations NaN — c'est un cas limite non couverte restante, bien que la couverture générale ait progressé significativement (21 tests, dont 4 nouveaux pour notations non-décimales).
 
 ## Risques
 
-- **Régression invisible sur NaN** : aucun test pour contamination NaN (`mean([NaN, 2])`). Comportement avec NaN indéfini.
-- **Fausse sécurité liée au statut de référence** : le README élève la suite au rang de source de vérité, mais sa couverture des cas limites reste incomplète (13 tests, dont 7 limites stats + 3 CLI, mais NaN manquant).
+- **Régression invisible sur NaN** : aucun test pour contamination NaN (`mean([NaN, 2])`). Comportement avec NaN indéfini — reste le seul cas limite non couvert.
+- Suite est désormais robuste pour les entrées non-décimales (hex, octal, binaire, scientifique) grâce à SHIAAAAAAAAAAAAAAAAAAAAA-448 — risque résiduel limité à NaN.
 
 ## Recommandations priorisées
 
-1. **Ajouter des cas limites manquants dans `test/stats.test.js`** : au minimum `median([5])` (liste à un élément) et un cas NaN (`mean([NaN, 2])`). Chaque cas ajouté renforce le statut de référence. `mean([])` et `median([])` sont désormais couverts (SHIAAAAAAAAAAAAAAAAAAAAA-243, SHIAAAAAAAAAAAAAAAAAAAAA-329).
+1. **Ajouter le cas limite NaN manquant dans `test/stats.test.js`** : un test pour `mean([NaN, 2])` pour confirmer le comportement attendu (contamination NaN ou rejet explicite). Les notations non-décimales sont maintenant couvertes (SHIAAAAAAAAAAAAAAAAAAAAA-448). `mean([])`, `median([])`, hex/octal/binaire/scientifique sont tous testés et passants.
 2. **Configurer un pipeline CI minimal** (ex. GitHub Actions : `npm test` sur push) si le dépôt est destiné à recevoir des contributions ou à être utilisé en pipeline. La suite est maintenant verte et peut passer en CI.
 3. **Élargir le glob** de `test/*.test.js` à `test/**/*.test.js` dans `package.json:7` si des sous-dossiers de tests sont envisagés.
 
