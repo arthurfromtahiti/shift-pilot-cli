@@ -29,7 +29,7 @@ Il n'y a rien à auditer au sens classique du terme (tables, relations, contrain
 
 ## Dettes techniques
 
-- Le type du tableau `valeurs` n'est pas validé en amont de `parseValues()` : il peut contenir `NaN` sans que le code de calcul le signale. `parseValues()` rejette les chaînes non-numériques, les lignes vides, et depuis SHIAAAAAAAAAAAAAAAAAAAAA-448, utilise une validation par regex stricte `/^[+-]?\d+(\.\d+)?$/` pour accepter uniquement les décimaux (entiers ou virgule flottante) — elle rejette explicitement hex (`0x…`), octal (`0o…`), binaire (`0b…`), scientifique (`1e2`), `Infinity`, et `NaN` (`src/stats.js:30-46`). Le NaN produit par d'autres vecteurs reste non géré.
+- Le type du tableau `valeurs` n'est pas validé en amont de `parseValues()` : il peut contenir `NaN` sans que le code de calcul le signale. `parseValues()` rejette les chaînes non-numériques, les lignes vides, et depuis SHIAAAAAAAAAAAAAAAAAAAAA-448, utilise une validation par regex stricte `/^[+-]?\d+(\.\d+)?$/` pour accepter uniquement les nombres décimaux avec point (entiers ou nombres avec partie décimale) — elle rejette explicitement hex (`0x…`), octal (`0o…`), binaire (`0b…`), scientifique (`1e2`), `Infinity`, et `NaN` (`src/stats.js:30-46`). Le NaN produit par d'autres vecteurs reste non géré.
 - La description « CSV » (`package.json:4`, `bin/index.js:2`, `README.md`) est inexacte par rapport au parsing réel. Ce décalage terminologique peut induire en erreur un utilisateur qui tenterait de passer un vrai fichier CSV multi-colonnes.
 
 ## Zones critiques

@@ -26,9 +26,9 @@ Par ailleurs, le produit souffre d'un décalage entre sa description (« CSV »)
 
 **Décalage terminologique « CSV ».** `VÉRIFIÉ_CODE` : `package.json:4` (« statistiques sur fichiers CSV »), `bin/index.js:2` (commentaire « Usage : pilot-stats <fichier.csv> »), `README.md:3` (section « Usage » avec `data.csv`). Le parsing réel ne gère qu'un nombre par ligne, séparateur `\n` exclusivement (`bin/index.js:10`). Un fichier CSV standard (`1,2,3` sur une ligne) serait parsé comme un seul élément `NaN` (ou une chaîne non numérique).
 
-**Cas limites fonctionnellement spécifiés et testés.** `VÉRIFIÉ_CODE` : depuis SHIAAAAAAAAAAAAAAAAAAAAA-448, `parseValues()` utilise une validation stricte par regex décimale `/^[+-]?\d+(\.\d+)?$/` qui rejette les notations non-décimales (hex `0x…`, octal `0o…`, binaire `0b…`, scientifique `1e2`, `Infinity`, `NaN`) avec un message d'erreur explicite. Le comportement sur fichier vide (erreur), fichier à une seule valeur (accepté), fichier avec valeurs négatives ou décimales (acceptées) est désormais testé et conforme.
+**Cas limites fonctionnellement spécifiés et testés.** `VÉRIFIÉ_CODE` : depuis SHIAAAAAAAAAAAAAAAAAAAAA-448, `parseValues()` utilise une validation stricte par regex décimale `/^[+-]?\d+(\.\d+)?$/` qui rejette les notations non-décimales (hex `0x…`, octal `0o…`, binaire `0b…`, scientifique `1e2`, `Infinity`, `-Infinity`) avec un message d'erreur explicite. Les quatre notations rejetées sont explicitement testées (`test/stats.test.js:63-78`). Le comportement sur fichier vide (erreur), fichier à une seule valeur (accepté), lignes vides (filtrées) est testé et conforme. Les valeurs négatives et décimales sont acceptées par `parseValues()` (validation regex permet `[+-]?` et `(\.\d+)?`), mais ne sont pas couverts par des tests dédiés — ils sont implicitement acceptés par le code.
 
-**Aucune fonctionnalité inachevée ou partiellement implémentée.** `VÉRIFIÉ_CODE` : le code ne contient pas de commentaires `TODO`, `FIXME`, `WIP`, ni de branche morte visible. Le projet ne prétend faire qu'une chose, et il la fait sur entrée bien formée — à l'exception de la médiane paire.
+**Aucune fonctionnalité inachevée ou partiellement implémentée.** `VÉRIFIÉ_CODE` : le code ne contient pas de commentaires `TODO`, `FIXME`, `WIP`, ni de branche morte visible. Le projet ne prétend faire qu'une chose, et il la fait sur entrée bien formée — la médiane paire a été corrigée (commit `38a7ba5`).
 
 ## Forces
 
@@ -39,9 +39,8 @@ Par ailleurs, le produit souffre d'un décalage entre sa description (« CSV »)
 
 ## Dettes techniques
 
-- ~~Médiane sur listes paires incorrecte~~ : **CORRIGÉE** (CLA-184, commit `6ad241d`) — `src/stats.js:11-21` gère désormais correctement la parité.
 - Décalage entre la description « CSV » et le parsing réel « un nombre par ligne » : risque de confusion utilisateur (`package.json:4`, `bin/index.js:2`, `README.md`).
-- Comportement sur entrées dégénérées non spécifié et non testé : liste vide, valeurs NaN, argument CLI absent.
+- Couverture des cas limites : valeur NaN en entrée (`mean([NaN, 2])`) reste non couverte malgré les 21 tests existants.
 
 ## Zones critiques
 
@@ -50,17 +49,15 @@ Par ailleurs, le produit souffre d'un décalage entre sa description (« CSV »)
 
 ## Risques
 
-- **Résultats silencieusement incorrects sur entrées paires.** ~~Tout utilisateur passant un fichier de 2, 4, 6, … valeurs obtient une médiane incorrecte~~ — **CORRIGÉ** (commit `6ad241d`, `src/stats.js:11-21`). L'implémentation gère désormais correctement les listes paires. `OBSERVÉ npm test` : 21 tests passants.
-- **Confusion utilisateur sur le format d'entrée.** Le terme « CSV » dans la documentation peut conduire un utilisateur à passer un fichier multi-colonnes et recevoir des `NaN` sans explication. Impact : faible pour un outil interne, mais problème de qualité documentaire.
+- **Confusion utilisateur sur le format d'entrée.** Le terme « CSV » dans la documentation peut conduire un utilisateur à passer un fichier multi-colonnes et recevoir des `NaN` silencieux ou une erreur sans explication. Impact : faible pour un outil interne, mais problème de qualité documentaire.
+- **Régression invisible sur NaN.** Aucun test pour contamination NaN (`mean([NaN, 2])`). Comportement avec NaN indéfini — reste le seul cas limite non couvert.
 
 ## Recommandations priorisées
 
-1. **Corriger `median()` dans `src/stats.js:11-21`** : ajouter la condition de parité pour retourner la moyenne des deux valeurs centrales sur les listes de taille paire — **CORRIGÉE** (commit `6ad241d`). La priorité fonctionnelle est résolue ; la suite de référence est verte et le comportement est aligné sur la spécification.
-2. **Corriger la terminologie** dans `package.json`, `bin/index.js` et `README.md` : « un nombre par ligne » plutôt que « CSV ».
-3. **Documenter et tester les cas limites** : spécifier le comportement attendu pour liste vide, valeur NaN, argument absent, et l'implémenter ou le rejeter explicitement.
+1. **Corriger la terminologie** dans `package.json`, `bin/index.js` et `README.md` : remplacer « CSV » par « fichier texte, un nombre par ligne » pour aligner la description sur le comportement réel.
+2. **Ajouter un test pour NaN en entrée** : un test pour `mean([NaN, 2])` pour confirmer le comportement attendu (contamination NaN ou rejet explicite). Les cas nominaux, limites et notations non-décimales sont tous testés et passants.
 
 ## Questions ouvertes
 
-- La correction de la médiane paire est-elle prévue dans le chantier aval immédiat, ou cet état rouge est-il maintenu délibérément pour une raison de processus (ex. valider la chaîne de détection CI) ?
-- Le projet est-il destiné à rester un banc d'essai figé (périmètre constant) ou à évoluer vers d'autres agrégats (min, max, écart-type) ? La réponse conditionne l'importance relative de la couverture des cas limites.
-- Quel est le comportement souhaité pour un fichier à zéro ligne, ou un fichier ne contenant qu'une valeur numérique ? Ces cas doivent être spécifiés avant d'être implémentés.
+- Le comportement attendu pour NaN en entrée (`mean([NaN, 2])`) : doit-il être une erreur explicite ou silencieusement propagé ? Décision impacte la couverture des cas limites.
+- Le projet est-il destiné à rester un banc d'essai figé (périmètre constant) ou à évoluer vers d'autres agrégats (min, max, écart-type) ? La réponse conditionne l'importance relative de la couverture des cas limites futurs.

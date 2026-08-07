@@ -4,13 +4,13 @@
 
 ## Compréhension globale
 
-La suite de tests est constituée de deux fichiers (`test/stats.test.js`, 44 lignes, 9 tests ; `test/cli.test.js`, 29 lignes, 3 tests), exécutés via `node --test test/*.test.js` (`package.json:7`). Elle utilise exclusivement des modules natifs Node.js (`node:test`, `node:assert/strict`) — aucune dépendance externe. Le `README.md` désigne explicitement cette suite comme la **référence comportementale** du produit : « La suite de tests fait référence : tout écart entre le comportement et les tests est une anomalie. »
+La suite de tests est constituée de deux fichiers (`test/stats.test.js`, 78 lignes, 17 tests ; `test/cli.test.js`, 39 lignes, 4 tests), exécutés via `node --test test/*.test.js` (`package.json:7`). Elle utilise exclusivement des modules natifs Node.js (`node:test`, `node:assert/strict`) — aucune dépendance externe. Le `README.md` désigne explicitement cette suite comme la **référence comportementale** du produit : « La suite de tests fait référence : tout écart entre le comportement et les tests est une anomalie. »
 
-Au SHA courant `91ae513` (2026-08-07), la suite est **verte** : `OBSERVÉ` en exécutant `npm test` → `tests 21 · pass 21 · fail 0`. Historiquement, au SHA `a7038b1` (2026-08-04), la suite était rouge à 3 tests.
+Au SHA courant `3e66e89` (2026-08-07), la suite est **verte** : `OBSERVÉ` en exécutant `npm test` → `tests 21 · pass 21 · fail 0`. Historiquement, au SHA `a7038b1` (2026-08-04), la suite était rouge à 3 tests.
 
 ## Résumé exécutif
 
-La suite était rouge au seed (SHA `a7038b1`), mais a été progressivement enrichie et corrigée. Au SHA courant `91ae513` (2026-08-07), elle est verte avec 21 tests passants, couvrant :
+La suite était rouge au seed (SHA `a7038b1`), mais a été progressivement enrichie et corrigée. Au SHA courant `3e66e89` (2026-08-07), elle est verte avec 21 tests passants, couvrant :
 - Cas nominaux stats : `mean([2,4,6])`, `median([9,1,5])`, `median([1,2,3,4])`
 - Cas limites stats adressés : `mean([])` throw (SHIAAAAAAAAAAAAAAAAAAAAA-243), `median([])` throw (SHIAAAAAAAAAAAAAAAAAAAAA-329), `parseValues("")` throw, `parseValues("non-numérique")` throw, `parseValues("Infinity")` throw (SHIAAAAAAAAAAAAAAAAAAAAAAAA-295), `parseValues("-Infinity")` throw (SHIAAAAAAAAAAAAAAAAAAAAAAAA-295), `parseValues("guillemets")` (SHIAAAAAAAAAAAAAAAAAAAAA-398), `parseValues("cellule vide quotée")` throw (SHIAAAAAAAAAAAAAAAAAAAAA-405), `parseValues("hex/octal/binaire/scientifique")` throw (SHIAAAAAAAAAAAAAAAAAAAAA-448), `parseValues("lignes vides")` filtrées
 - Tests CLI : sans argument → usage + exit 1, usage sans `.csv`, fichier inexistant → message clair, chemin dossier → EISDIR
