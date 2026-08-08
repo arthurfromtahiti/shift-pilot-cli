@@ -76,3 +76,9 @@ test('parseValues — notation octale préfixée → erreur mentionnant la valeu
 test('parseValues — notation binaire préfixée → erreur mentionnant la valeur (SHIAAAAAAAAAAAAAAAAAAAAAAAA-448)', () => {
   assert.throws(() => parseValues('5\n0b101\n15'), /0b101/);
 });
+
+test('parseValues — guillemets + espaces intérieurs (export tableur) → nombres corrects (SHIAAAAAAAAAAAAAAAAAAAAAAAA-532)', () => {
+  // '" 12 "' doit être accepté comme 12 ; le trim() après stripSurroundingQuotes est nécessaire.
+  const values = parseValues('" 12 "\n" 34 "\n" 56 "');
+  assert.deepEqual(values, [12, 34, 56]);
+});

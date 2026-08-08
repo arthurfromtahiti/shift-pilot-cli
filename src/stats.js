@@ -37,7 +37,7 @@ function parseValues(content) {
     throw new Error("Le fichier est vide.");
   }
   const lines = trimmed.split("\n").filter(l => l.trim() !== "");
-  const stripped = lines.map(l => stripSurroundingQuotes(l.trim()));
+  const stripped = lines.map(l => stripSurroundingQuotes(l.trim()).trim());
   const invalides = stripped.filter(l => !DECIMAL_RE.test(l));
   if (invalides.length > 0) {
     throw new Error(`Valeurs non-numériques : ${invalides.join(", ")}`);
